@@ -18,9 +18,9 @@ const Details = () => {
       color: 'White with Jaipuri Print',
       sizes: ['S', 'M', 'L', 'XL', 'XXL'],
       images: [
-        '/public/assets/White Kurta.jpg',
-        '/public/assets/White Kurta_1.jpg',
-        '/public/assets/White Kurta_2.jpg',
+        '/White Kurta.jpg',
+        '/White Kurta_1.jpg',
+        '/White Kurta_2.jpg',
       ],
       features: [
         'Handcrafted with authentic Jaipuri print',
@@ -45,9 +45,9 @@ const Details = () => {
       color: 'White with Jaipuri Print',
       sizes: ['S', 'M', 'L', 'XL', 'XXL'],
       images: [
-        '/public/assets/White-Shirt (3).jpg',
-        '/public/assets/White-Shirt (1).jpg',
-        '/public/assets/White-Shirt (2).jpg',
+        '/assets/White-Shirt (3).jpg',
+        '/assets/White-Shirt (1).jpg',
+        '/assets/White-Shirt (2).jpg',
       ],
       features: [
         'Handcrafted with authentic Jaipuri print',
@@ -72,9 +72,9 @@ const Details = () => {
       color: 'Pink with Jaipuri Print',
       sizes: ['S', 'M', 'L', 'XL'],
       images: [
-        '/public/assets/Pink-Kurta (3).jpg',
-        '/public/assets/Pink-Kurta (1).jpg',
-        '/public/assets/Pink-Kurta (2).jpg',
+        '/assets/Pink-Kurta (3).jpg',
+        '/assets/Pink-Kurta (1).jpg',
+        '/assets/Pink-Kurta (2).jpg',
       ],
       features: [
         'Handcrafted with authentic Jaipuri print',
@@ -99,7 +99,7 @@ const Details = () => {
       color: 'Solid Black',
       sizes: ['S', 'M', 'L', 'XL', 'XXL'],
       images: [
-        '/public/assets/Black T-Shirt.jpg',
+        '/assets/Black T-Shirt.jpg',
        
       ],
       features: [

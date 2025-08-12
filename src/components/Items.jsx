@@ -12,7 +12,7 @@ const Items = () => {
     { 
       id: 1, 
       name: 'White Kurta', 
-      image: '/public/assets/White Kurta.jpg', 
+      image: '/assets/White Kurta.jpg', 
       price: '₹799',
       description: 'Elegant white kurta with intricate embroidery',
       sizes: ['S', 'M', 'L', 'XL'],
@@ -21,7 +21,7 @@ const Items = () => {
     { 
       id: 2, 
       name: 'White Shirt', 
-      image: '/public/assets/White-Shirt (3).jpg', 
+      image: '/assets/White-Shirt (3).jpg', 
       price: '₹699',
       description: 'Classic blue kurta with minimal design',
       sizes: ['S', 'M', 'L', 'XL'],
@@ -30,7 +30,7 @@ const Items = () => {
     { 
       id: 3, 
       name: 'Pink Shirt', 
-      image: '/public/assets/Pink-Kurta (3).jpg', 
+      image: '/assets/Pink-Kurta (3).jpg', 
       price: '₹799',
       description: 'Sleek black kurta with golden accents',
       sizes: ['M', 'L', 'XL'],
@@ -39,7 +39,7 @@ const Items = () => {
     { 
       id: 4, 
       name: 'Black T-Shirt', 
-      image: '/public/assets/Black T-Shirt.jpg', 
+      image: '/assets/Black T-Shirt.jpg', 
       price: '₹699',
       description: 'Light beige kurta with subtle patterns',
       sizes: ['S', 'M', 'L', 'XL'],
