@@ -3,16 +3,18 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signInWithPopup } from "firebase/auth";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Import environment variables
+import env from '../env';
+
+// Firebase configuration using environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyCBgKDoYll9PH74eLlimwOBZuZqZUaumV4",
-  authDomain: "laathi-a3be7.firebaseapp.com",
-  projectId: "laathi-a3be7",
-  storageBucket: "laathi-a3be7.firebasestorage.app",
-  messagingSenderId: "800332723604",
-  appId: "1:800332723604:web:831ee959461cc83a108b81",
-  measurementId: "G-1Y44B5HM6K"
+  apiKey: env.FIREBASE_API_KEY,
+  authDomain: env.FIREBASE_AUTH_DOMAIN,
+  projectId: env.FIREBASE_PROJECT_ID,
+  storageBucket: env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: env.FIREBASE_APP_ID,
+  measurementId: env.FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

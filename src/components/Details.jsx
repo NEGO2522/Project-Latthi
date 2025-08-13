@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import env from '../env';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck, FiMinus, FiPlus } from 'react-icons/fi';
 import { useCart } from '../contexts/CartContext';
@@ -171,10 +172,68 @@ const Details = () => {
     }
   };
 
-  const handleBuyNow = () => {
-    // Buy now functionality will be implemented later
-    console.log('Buy now:', { product, size: selectedSize, quantity });
-    // navigate('/checkout');
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleBuyNow = async () => {
+    try {
+      // Check if Razorpay is already loaded
+      if (!window.Razorpay) {
+        const loaded = await loadRazorpay();
+        if (!loaded) {
+          throw new Error('Failed to load Razorpay');
+        }
+      }
+
+      const amount = parseInt(product.price.replace(/[^0-9]/g, '')) * 100; // Convert price to paise
+      
+      const options = {
+        key: env.RAZORPAY_KEY_ID,
+        amount: amount.toString(),
+        currency: 'INR',
+        name: env.RAZORPAY_COMPANY_NAME,
+        description: `Order for ${product.name} (${selectedSize})`,
+        image: env.RAZORPAY_COMPANY_LOGO,
+        handler: function (response) {
+          // Handle successful payment
+          alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
+          // Redirect to order success page or show success message
+          // navigate('/order-success');
+        },
+        prefill: {
+          name: 'Customer Name',
+          email: 'customer@example.com',
+          contact: '+919876543210'
+        },
+        notes: {
+          address: 'Customer Address',
+          product: product.name,
+          size: selectedSize,
+          quantity: quantity
+        },
+        theme: {
+          color: '#4F46E5' // Match your brand color
+        }
+      };
+
+      // Create a new Razorpay instance
+      const paymentObject = new window.Razorpay(options);
+      
+      // Open the payment form
+      paymentObject.open();
+      
+    } catch (error) {
+      console.error('Error initializing Razorpay:', error);
+      toast.error('Failed to initialize payment. Please try again.');
+    }
   };
 
   return (
