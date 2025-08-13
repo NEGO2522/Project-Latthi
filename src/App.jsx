@@ -8,12 +8,12 @@ import Login from './auth/Login';
 import Items from './components/Items';
 import Details from './components/Details';
 import Cart from './components/Cart';
+import ContactUs from './components/ContactUs';
 
 // Placeholder components for other routes
 const Shop = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">Shop Page (Coming Soon)</div>;
 const Categories = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">Categories Page (Coming Soon)</div>;
 const About = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">About Us (Coming Soon)</div>;
-const Contact = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">Contact Us (Coming Soon)</div>;
 const PageNotFound = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">404 - Page Not Found</div>;
 
 // Protected Route component
@@ -84,7 +84,7 @@ function App() {
               } 
             />
             <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
+            <Route path="/contact" element={<ContactUs />} />
             <Route 
               path="/details/:id" 
               element={

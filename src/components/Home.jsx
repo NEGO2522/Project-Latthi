@@ -485,12 +485,15 @@ const Home = ({ user }) => {
             <div className="mt-8">
               <button 
                 onClick={() => navigate('/items')}
-                className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200"
+                className="bg-indigo-600 text-white px-6 py-3 cursor-pointer rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200"
               >
                 Shop Now
               </button>
-              <button className="ml-4 px-6 py-3 rounded-lg font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200">
-                Learn More
+              <button 
+                onClick={() => navigate('/contact')}
+                className="ml-4 px-6 py-3 rounded-lg font-medium border cursor-pointer border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-indigo-300 transition-colors duration-200"
+              >
+                Contact Us
               </button>
             </div>
             
