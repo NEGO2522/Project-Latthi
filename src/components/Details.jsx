@@ -18,9 +18,9 @@ const Details = () => {
       color: 'White with Jaipuri Print',
       sizes: ['S', 'M', 'L', 'XL', 'XXL'],
       images: [
-        '/White Kurta.jpg',
-        '/White Kurta_1.jpg',
-        '/White Kurta_2.jpg',
+        '/assets/White Kurta.jpg',
+        '/assets/White Kurta_1.jpg',
+        '/assets/White Kurta_2.jpg',
       ],
       features: [
         'Handcrafted with authentic Jaipuri print',
