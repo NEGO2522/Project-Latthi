@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck } from 'react-icons/fi';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck, FiMinus, FiPlus } from 'react-icons/fi';
+import { useCart } from '../contexts/CartContext';
+import { toast } from 'react-toastify';
 
 const Details = () => {
   const [selectedSize, setSelectedSize] = useState('M');
   const [quantity, setQuantity] = useState(1);
+  const [isAdding, setIsAdding] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
+  const { addToCart, getCartCount } = useCart();
 
   // Product database
   const products = {
@@ -125,9 +129,46 @@ const Details = () => {
 
   const product = products[id] || products[1]; // Default to first product if ID not found
 
-  const handleAddToCart = () => {
-    // Add to cart functionality will be implemented later
-    console.log('Added to cart:', { product, size: selectedSize, quantity });
+  const handleAddToCart = async () => {
+    if (!id) return;
+    
+    const product = products[id];
+    if (!product) return;
+    
+    setIsAdding(true);
+    try {
+      addToCart(
+        { 
+          id: id, 
+          name: product.name, 
+          price: product.price, 
+          images: product.images 
+        },
+        selectedSize,
+        quantity
+      );
+      
+      toast.success('Added to cart!', {
+        position: 'top-right',
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart', {
+        position: 'top-right',
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   const handleBuyNow = () => {
@@ -139,12 +180,26 @@ const Details = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <button 
-          onClick={() => navigate(-1)}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
-        >
-          <FiArrowLeft className="mr-2" /> Back to Shop
-        </button>
+        <div className="flex justify-between items-center mb-6">
+          <button 
+            onClick={() => navigate(-1)}
+            className="flex items-center text-gray-600 hover:text-gray-900"
+          >
+            <FiArrowLeft className="mr-2" /> Back to Shop
+          </button>
+          <Link 
+            to="/cart"
+            className="relative p-2 text-gray-700 hover:text-indigo-600 transition-colors"
+            title="View Cart"
+          >
+            <FiShoppingCart className="w-6 h-6" />
+            {getCartCount() > 0 && (
+              <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                {getCartCount()}
+              </span>
+            )}
+          </Link>
+        </div>
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
@@ -240,36 +295,53 @@ const Details = () => {
 
               <div className="mt-6">
                 <h2 className="text-lg font-medium text-gray-900">Quantity</h2>
-                <div className="mt-2 flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-l-md text-gray-600 hover:bg-gray-50"
-                  >
-                    -
-                  </button>
-                  <div className="w-16 h-10 flex items-center justify-center border-t border-b border-gray-300 text-gray-900">
-                    {quantity}
+                <div className="flex items-center space-x-4 mb-6">
+                  <div className="flex items-center border rounded-lg overflow-hidden">
+                    <button 
+                      onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center"
+                      disabled={isAdding}
+                    >
+                      <FiMinus className="w-4 h-4" />
+                    </button>
+                    <span className="px-4 py-1 w-12 text-center">{quantity}</span>
+                    <button 
+                      onClick={() => setQuantity(prev => prev + 1)}
+                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center"
+                      disabled={isAdding}
+                    >
+                      <FiPlus className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-r-md text-gray-600 hover:bg-gray-50"
+
+                  <button 
+                    onClick={handleAddToCart}
+                    disabled={isAdding}
+                    className={`flex-1 py-2 px-6 rounded-md font-medium flex items-center justify-center space-x-2 border ${
+                      isAdding 
+                        ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed' 
+                        : 'bg-white border-indigo-600 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-700 hover:text-indigo-700'
+                    }`}
                   >
-                    +
+                    {isAdding ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <FiShoppingCart />
+                        <span>Add to Cart</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
 
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  className="flex-1 bg-white border border-indigo-600 text-indigo-600 py-3 px-6 rounded-md font-medium hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center justify-center"
-                >
-                  <FiShoppingCart className="mr-2" />
-                  Add to Cart
-                </button>
                 <button
                   type="button"
                   onClick={handleBuyNow}

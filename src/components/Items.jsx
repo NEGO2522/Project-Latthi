@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { FiShoppingCart, FiHome } from 'react-icons/fi';
+import { useCart } from '../contexts/CartContext';
 
 const Items = () => {
   const navigate = useNavigate();
+  const { getCartCount } = useCart();
   
   const handleCheckout = (itemId) => {
     navigate(`/details/${itemId}`);
@@ -50,19 +53,41 @@ const Items = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-            Our Collection
-          </h1>
-          <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
-            Handcrafted with premium fabric and intricate detailing
-          </p>
-        </motion.div>
+        <div className="flex justify-between items-center mb-12 relative">
+          <Link 
+            to="/"
+            className="absolute left-0 top-0 flex items-center text-gray-600 hover:text-indigo-600 transition-colors"
+            title="Back to Home"
+          >
+            <FiHome className="w-5 h-5 mr-1" />
+            <span className="hidden sm:inline">Home</span>
+          </Link>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center mx-auto"
+          >
+            <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+              Our Collection
+            </h1>
+            <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+              Handcrafted with premium fabric and intricate detailing
+            </p>
+          </motion.div>
+          <Link 
+            to="/cart"
+            className="relative p-2 text-gray-700 hover:text-indigo-600 transition-colors self-start mt-2"
+            title="View Cart"
+          >
+            <FiShoppingCart className="w-6 h-6" />
+            {getCartCount() > 0 && (
+              <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                {getCartCount()}
+              </span>
+            )}
+          </Link>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4">
           {items.map((item) => (

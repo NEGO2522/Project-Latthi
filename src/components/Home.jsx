@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiChevronLeft, FiChevronRight, FiShoppingCart, FiUser, FiMenu, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { useCart } from '../contexts/CartContext';
 
 // Image Carousel Component
 const Carousel = () => {
@@ -75,6 +76,13 @@ const Home = ({ user }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
+  const { getCartCount } = useCart();
+  
+  const handleCategorySelect = (category) => {
+    navigate('/items');
+    setShowCategories(false);
+    setIsMenuOpen(false);
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -105,7 +113,10 @@ const Home = ({ user }) => {
     navigate('/login', { state: { from: window.location.pathname } });
   };
   
-  const categories = ['T-Shirts', 'Printed Shirts'];
+  const categories = [
+    { name: 'T-Shirts', value: 't-shirts' },
+    { name: 'Shirts', value: 'shirts' }
+  ];
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -196,14 +207,20 @@ const Home = ({ user }) => {
 
             {/* Mobile Cart Icon */}
             <div className="md:hidden flex items-center">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors duration-200 relative"
-              >
-                <FiShoppingCart className="w-6 h-6" />
-                <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">0</span>
-              </motion.button>
+              <Link to="/cart">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors duration-200 relative"
+                >
+                  <FiShoppingCart className="w-6 h-6" />
+                  {getCartCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                      {getCartCount()}
+                    </span>
+                  )}
+                </motion.button>
+              </Link>
             </div>
 
             {/* Desktop Navigation */}
@@ -234,13 +251,13 @@ const Home = ({ user }) => {
                           className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
                         >
                           {categories.map((category) => (
-                            <a
-                              key={category}
-                              href="#"
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            <Link
+                              key={category.value}
+                              to={`/items?category=${encodeURIComponent(category.value.toLowerCase())}`}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             >
-                              {category}
-                            </a>
+                              {category.name}
+                            </Link>
                           ))}
                         </motion.div>
                       )}
@@ -249,14 +266,20 @@ const Home = ({ user }) => {
                   
                   {/* Cart Button */}
                   <div className="flex items-center space-x-4">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors duration-200 relative"
-                    >
-                      <FiShoppingCart className="w-6 h-6" />
-                      <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">0</span>
-                    </motion.button>
+                    <Link to="/cart">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors duration-200 relative"
+                      >
+                        <FiShoppingCart className="w-6 h-6" />
+                        {getCartCount() > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                            {getCartCount()}
+                          </span>
+                        )}
+                      </motion.button>
+                    </Link>
                     
                     <motion.button
                       onClick={handleSignOut}
@@ -330,7 +353,7 @@ const Home = ({ user }) => {
               {user ? (
                 <>
                   <button 
-                    className="text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    className="text-left px-4 py-2 w-full text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                     onClick={() => setShowCategories(!showCategories)}
                   >
                     <div className="flex items-center justify-between">
@@ -344,13 +367,13 @@ const Home = ({ user }) => {
                   {showCategories && (
                     <div className="pl-6 space-y-2">
                       {categories.map((category) => (
-                        <a
-                          key={category}
-                          href="#"
-                          className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                        <button
+                          key={category.value}
+                          onClick={() => handleCategorySelect(category.value)}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                          {category}
-                        </a>
+                          {category.name}
+                        </button>
                       ))}
                     </div>
                   )}
@@ -461,7 +484,7 @@ const Home = ({ user }) => {
             
             <div className="mt-8">
               <button 
-                onClick={() => navigate('/categories')}
+                onClick={() => navigate('/items')}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200"
               >
                 Shop Now

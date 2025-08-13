@@ -2,10 +2,12 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { useState, useEffect } from 'react';
 import { auth } from './firebase/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { CartProvider } from './contexts/CartContext';
 import Home from './components/Home';
 import Login from './auth/Login';
-import Category from './components/Items';
+import Items from './components/Items';
 import Details from './components/Details';
+import Cart from './components/Cart';
 
 // Placeholder components for other routes
 const Shop = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">Shop Page (Coming Soon)</div>;
@@ -42,7 +44,6 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const [cartItemsCount] = useState(0);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -60,41 +61,51 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col">
-        <Routes>
-          <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-          <Route path="/" element={<Home user={user} />} />
-          <Route 
-            path="/shop" 
-            element={
-              <ProtectedRoute>
-                <Shop />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/categories" 
-            element={
-              <ProtectedRoute>
-                <Category />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route 
-            path="/details/:id" 
-            element={
-              <ProtectedRoute>
-                <Details />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="*" element={<PageNotFound />} />
-        </Routes>
-      </div>
-    </Router>
+    <CartProvider>
+      <Router>
+        <div className="min-h-screen flex flex-col">
+          <Routes>
+            <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+            <Route path="/" element={<Home user={user} />} />
+            <Route 
+              path="/shop" 
+              element={
+                <ProtectedRoute>
+                  <Shop />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/items" 
+              element={
+                <ProtectedRoute>
+                  <Items />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route 
+              path="/details/:id" 
+              element={
+                <ProtectedRoute>
+                  <Details />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/cart" 
+              element={
+                <ProtectedRoute>
+                  <Cart />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="*" element={<PageNotFound />} />
+          </Routes>
+        </div>
+      </Router>
+    </CartProvider>
   );
 }
 
