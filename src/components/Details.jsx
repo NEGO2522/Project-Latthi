@@ -9,6 +9,7 @@ const Details = () => {
   const [selectedSize, setSelectedSize] = useState('M');
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const navigate = useNavigate();
   const { id } = useParams();
   const { addToCart, getCartCount } = useCart();
@@ -266,7 +267,7 @@ const Details = () => {
             <div className="space-y-4">
               <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-100">
                 <img
-                  src={product.images[0]}
+                  src={product.images[selectedImageIndex]}
                   alt={product.name}
                   className="h-full w-full object-cover object-center"
                   onError={(e) => {
@@ -275,9 +276,15 @@ const Details = () => {
                   }}
                 />
               </div>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-4 gap-4 mt-4">
                 {product.images.map((img, index) => (
-                  <div key={index} className="aspect-w-1 aspect-h-1 overflow-hidden rounded-lg bg-gray-100">
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`aspect-w-1 aspect-h-1 overflow-hidden rounded-lg transition-all duration-200 ${
+                      selectedImageIndex === index ? 'ring-2 ring-indigo-500 ring-offset-2' : 'ring-1 ring-gray-200 hover:ring-2 hover:ring-indigo-300'
+                    }`}
+                  >
                     <img
                       src={img}
                       alt={`${product.name} view ${index + 1}`}
@@ -287,7 +294,7 @@ const Details = () => {
                         e.target.src = 'https://via.placeholder.com/150x200?text=Product';
                       }}
                     />
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
