@@ -9,6 +9,7 @@ import Items from './components/Items';
 import Details from './components/Details';
 import Cart from './components/Cart';
 import ContactUs from './components/ContactUs';
+import Orders from './components/Orders';
 
 // Placeholder components for other routes
 const Shop = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">Shop Page (Coming Soon)</div>;
@@ -98,6 +99,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Cart />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/orders" 
+              element={
+                <ProtectedRoute>
+                  <Orders />
                 </ProtectedRoute>
               } 
             />

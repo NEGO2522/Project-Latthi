@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiChevronLeft, FiChevronRight, FiShoppingCart, FiUser, FiMenu, FiX } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiShoppingCart, FiPackage, FiUser, FiMenu, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { useCart } from '../contexts/CartContext';
 
@@ -265,7 +265,14 @@ const Home = ({ user }) => {
                   </div>
                   
                   {/* Cart Button */}
-                  <div className="flex items-center space-x-4">
+                  <div className="hidden md:flex items-center space-x-4">
+                    <Link 
+                      to="/orders" 
+                      className="p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors duration-200 flex items-center"
+                    >
+                      <FiPackage className="w-5 h-5 mr-1" />
+                      <span className="text-sm font-medium">Orders</span>
+                    </Link>
                     <Link to="/cart">
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -378,12 +385,22 @@ const Home = ({ user }) => {
                     </div>
                   )}
                   
-                  <a href="#" className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                  <Link 
+                    to="/account" 
+                    className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <FiUser className="w-5 h-5 mr-2" />
                     My Account
-                  </a>
-                  <a href="#" className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                    Orders
-                  </a>
+                  </Link>
+                  <Link 
+                    to="/orders" 
+                    className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <FiPackage className="w-5 h-5 mr-2" />
+                    Your Orders
+                  </Link>
                   <button
                     onClick={handleSignOut}
                     className="text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

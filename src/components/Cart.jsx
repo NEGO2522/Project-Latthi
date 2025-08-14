@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiShoppingBag, FiArrowLeft, FiTrash2, FiMinus, FiPlus } from 'react-icons/fi';
+import { FiShoppingBag, FiArrowLeft, FiTrash2, FiMinus, FiPlus, FiLoader } from 'react-icons/fi';
 import { useCart } from '../contexts/CartContext';
+import env from '../env';
+import { toast } from 'react-toastify';
 
 const Cart = () => {
   const { 
@@ -10,6 +13,78 @@ const Cart = () => {
     getCartTotal, 
     clearCart 
   } = useCart();
+  
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleCheckout = async () => {
+    try {
+      setIsProcessing(true);
+      
+      // Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        const loaded = await loadRazorpay();
+        if (!loaded) {
+          throw new Error('Failed to load Razorpay');
+        }
+      }
+
+      // Calculate total amount in paise (Razorpay uses the smallest currency unit)
+      const amount = getCartTotal() * 100;
+      
+      const options = {
+        key: env.RAZORPAY_KEY_ID,
+        amount: amount.toString(),
+        currency: 'INR',
+        name: env.RAZORPAY_COMPANY_NAME || 'Your Store Name',
+        description: 'Order Payment',
+        image: env.RAZORPAY_COMPANY_LOGO,
+        handler: function (response) {
+          // Handle successful payment
+          toast.success('Payment successful! Order placed.');
+          clearCart();
+          // You can redirect to order success page here
+          // navigate('/order-success');
+        },
+        prefill: {
+          name: 'Customer Name',
+          email: 'customer@example.com',
+          contact: '+919876543210'
+        },
+        theme: {
+          color: '#4F46E5' // Match your brand color
+        },
+        modal: {
+          ondismiss: function() {
+            // Handle when user closes the payment form
+            toast.info('Payment was not completed');
+          }
+        }
+      };
+
+      // Create a new Razorpay instance
+      const paymentObject = new window.Razorpay(options);
+      
+      // Open the payment form
+      paymentObject.open();
+      
+    } catch (error) {
+      console.error('Error initializing Razorpay:', error);
+      toast.error('Failed to initialize payment. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleQuantityChange = (itemId, size, newQuantity) => {
     if (newQuantity >= 1) {
@@ -123,9 +198,20 @@ const Cart = () => {
                   Continue Shopping
                 </Link>
                 <button
-                  className="flex-1 flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                  onClick={handleCheckout}
+                  disabled={isProcessing}
+                  className={`flex-1 flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white ${
+                    isProcessing ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'
+                  }`}
                 >
-                  Checkout
+                  {isProcessing ? (
+                    <>
+                      <FiLoader className="animate-spin mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Checkout'
+                  )}
                 </button>
               </div>
             </div>
