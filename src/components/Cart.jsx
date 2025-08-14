@@ -102,7 +102,7 @@ const Cart = () => {
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Your cart is empty</h1>
           <p className="text-gray-600 mb-8">Looks like you haven't added anything to your cart yet.</p>
           <Link 
-            to="/" 
+            to="/items" 
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
           >
             <FiArrowLeft className="mr-2" />
@@ -191,7 +191,7 @@ const Cart = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  to="/categories"
+                  to="/items"
                   className="flex-1 flex items-center justify-center px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
                 >
                   <FiArrowLeft className="mr-2" />
