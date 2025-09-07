@@ -125,20 +125,7 @@ const Home = ({ user }) => {
       <header className="border-b border-gray-100 sticky top-0 bg-white z-50">
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between">
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
-              <button 
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 text-gray-600 hover:text-gray-900 focus:outline-none"
-                aria-label="Toggle menu"
-              >
-                {isMenuOpen ? (
-                  <FiX className="w-6 h-6" />
-                ) : (
-                  <FiMenu className="w-6 h-6" />
-                )}
-              </button>
-            </div>
+            {/* Mobile Menu Button - Removed as per request */}
 
             {/* Brand Name - Center on mobile, left on larger screens */}
             <motion.div 
@@ -151,9 +138,16 @@ const Home = ({ user }) => {
               }}
               className="flex items-center justify-center md:justify-start w-full md:w-auto"
             >
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 tracking-wide">
-                LATHI
-              </h1>
+              <div className="flex items-center space-x-2">
+                <img 
+                  src="/assets/Logo.png" 
+                  alt="Lathi Logo" 
+                  className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+                />
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 tracking-wide">
+                  LATHI
+                </h1>
+              </div>
             </motion.div>
 
             {/* Desktop Navigation */}
