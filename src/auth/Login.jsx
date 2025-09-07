@@ -78,7 +78,7 @@ const Login = () => {
       <div className="w-full max-w-md mx-auto">
         <div className="text-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">
-            <span className="text-indigo-600">LATTHI</span>
+            <span className="text-indigo-600">LATHI</span>
           </h1>
           <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-extrabold text-gray-900">
             Sign in to your account

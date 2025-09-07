@@ -72,31 +72,14 @@ const Home = ({ user }) => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showTagline, setShowTagline] = useState(false);
-  const [showCategories, setShowCategories] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
   const { getCartCount } = useCart();
   
-  const handleCategorySelect = (category) => {
-    navigate('/items');
-    setShowCategories(false);
-    setIsMenuOpen(false);
+  const handleSignIn = () => {
+    navigate('/login', { state: { from: window.location.pathname } });
   };
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
   
   const handleSignOut = async () => {
     try {
@@ -109,15 +92,6 @@ const Home = ({ user }) => {
     }
   };
   
-  const handleSignIn = () => {
-    navigate('/login', { state: { from: window.location.pathname } });
-  };
-  
-  const categories = [
-    { name: 'T-Shirts', value: 't-shirts' },
-    { name: 'Shirts', value: 'shirts' }
-  ];
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowTagline(true);
@@ -140,7 +114,7 @@ const Home = ({ user }) => {
       {/* Fixed Tagline */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-gray-50 py-2 shadow-sm">
         <p className="text-center text-sm font-medium text-gray-700">
-          Latthi – Beat the Boring, Wear the Bold
+          Lathi – Beat the Boring, Wear the Bold
         </p>
       </div>
       
@@ -178,92 +152,14 @@ const Home = ({ user }) => {
               className="flex items-center justify-center md:justify-start w-full md:w-auto"
             >
               <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 tracking-wide">
-                LATTHI
+                LATHI
               </h1>
             </motion.div>
-
-            {/* Announcement Bar */}
-            <motion.div 
-              className="hidden md:flex items-center space-x-4"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ 
-                delay: 0.2, 
-                duration: 0.6,
-                ease: [0.4, 0, 0.2, 1],
-                y: { stiffness: 1000, velocity: -100 }
-              }}
-            >
-              <button className="text-gray-500 hover:text-gray-700">
-                <FiChevronLeft className="w-5 h-5" />
-              </button>
-              <p className="text-sm font-medium text-gray-700">
-              Exclusive Discount on Prepaid Orders
-              </p>
-              <button className="text-gray-500 hover:text-gray-700">
-                <FiChevronRight className="w-5 h-5" />
-              </button>
-            </motion.div>
-
-            {/* Mobile Cart Icon */}
-            <div className="md:hidden flex items-center">
-              <Link to="/cart">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors duration-200 relative"
-                >
-                  <FiShoppingCart className="w-6 h-6" />
-                  {getCartCount() > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                      {getCartCount()}
-                    </span>
-                  )}
-                </motion.button>
-              </Link>
-            </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
               {user ? (
                 <>
-                  {/* Categories Dropdown */}
-                  <div className="relative">
-                    <motion.button
-                      onClick={() => setShowCategories(!showCategories)}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex items-center space-x-1 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-full transition-colors duration-200"
-                    >
-                      <span>Categories</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </motion.button>
-                    
-                    {/* Dropdown Menu */}
-                    <AnimatePresence>
-                      {showCategories && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
-                        >
-                          {categories.map((category) => (
-                            <Link
-                              key={category.value}
-                              to={`/items?category=${encodeURIComponent(category.value.toLowerCase())}`}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              {category.name}
-                            </Link>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  
                   {/* Cart Button */}
                   <div className="hidden md:flex items-center space-x-4">
                     <Link 
@@ -448,7 +344,7 @@ const Home = ({ user }) => {
             className="space-y-6"
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
-              Elevate Your Style with <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold">Latthi</span>
+              Elevate Your Style with <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold">Lathi</span>
             </h2>
             
             <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg">
@@ -548,6 +444,111 @@ const Home = ({ user }) => {
               </div>
             </div>
           </motion.div>
+        </div>
+      </div>
+
+      {/* Featured Products Section */}
+      <div className="bg-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Our Featured Products</h2>
+            <div className="w-20 h-1 bg-indigo-600 mx-auto"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-4">
+            {/* Product 1 */}
+            <motion.div 
+              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+              whileHover={{ y: -5 }}
+            >
+              <Link to="/details/1">
+                <div className="h-64 overflow-hidden">
+                  <img 
+                    src="/assets/White Kurta.jpg" 
+                    alt="White Jaipuri Cotton Printed Shirt"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-medium text-gray-900 mb-1">White Jaipuri Cotton Shirt</h3>
+                  <p className="text-indigo-600 font-semibold">₹799</p>
+                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">A shirt that is stitched with detailed precision and printed with an authentic design.</p>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Product 2 */}
+            <motion.div 
+              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+              whileHover={{ y: -5 }}
+            >
+              <Link to="/details/2">
+                <div className="h-64 overflow-hidden">
+                  <img 
+                    src="/assets/White-Shirt (3).jpg" 
+                    alt="White Jaipuri Printed Cotton Shirt"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-medium text-gray-900 mb-1">White Jaipuri Half Sleeve</h3>
+                  <p className="text-indigo-600 font-semibold">₹699</p>
+                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">A shirt that is stitched with detailed precision and printed with an authentic design.</p>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Product 3 */}
+            <motion.div 
+              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+              whileHover={{ y: -5 }}
+            >
+              <Link to="/details/3">
+                <div className="h-64 overflow-hidden">
+                  <img 
+                    src="/assets/Pink-Kurta (3).jpg" 
+                    alt="Pink Jaipuri Full Sleeve Shirt"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-medium text-gray-900 mb-1">Pink Jaipuri Full Sleeve</h3>
+                  <p className="text-indigo-600 font-semibold">₹799</p>
+                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">A shirt that is stitched with detailed precision and printed with an authentic design.</p>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Product 4 */}
+            <motion.div 
+              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+              whileHover={{ y: -5 }}
+            >
+              <Link to="/details/4">
+                <div className="h-64 overflow-hidden">
+                  <img 
+                    src="/assets/Black T-Shirt.jpg" 
+                    alt="Black T-Shirt"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-medium text-gray-900 mb-1">Black T-Shirt</h3>
+                  <p className="text-indigo-600 font-semibold">₹699</p>
+                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">Light beige kurta with subtle patterns, perfect for casual wear.</p>
+                </div>
+              </Link>
+            </motion.div>
+          </div>
+          
+          <div className="text-center mt-10">
+            <Link 
+              to="/items" 
+              className="inline-block bg-indigo-600 text-white px-8 py-3 rounded-md font-medium hover:bg-indigo-700 transition-colors duration-200"
+            >
+              View All Products
+            </Link>
+          </div>
         </div>
       </div>
 
