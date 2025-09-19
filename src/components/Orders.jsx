@@ -1,58 +1,81 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowLeft, FiPackage, FiClock, FiCheckCircle, FiTruck, FiXCircle } from 'react-icons/fi';
-import { auth } from '../firebase/firebase';
+import { auth, database, ref, onValue } from '../firebase/firebase';
+import { handleImageError } from '../utils/imageUtils';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Simulated order data - in a real app, this would come from your backend
+  // Fetch user's orders from Realtime Database
   useEffect(() => {
-    // This is a mock implementation
-    const fetchOrders = async () => {
+    const fetchOrders = () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setLoading(true);
+        const user = auth.currentUser;
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        // Reference to the user's addresses/orders
+        const userOrdersRef = ref(database, `users/${user.uid}/addresses`);
         
-        // Mock data
-        const mockOrders = [
-          {
-            id: 'ORD-12345',
-            date: '2025-08-14',
-            status: 'Delivered',
-            items: [
-              { name: 'White Jaipuri Cotton Printed Shirt', quantity: 1, price: '₹799', image: '/assets/White Kurta.jpg' },
-              { name: 'Pink Jaipuri Full Sleeve Shirt', quantity: 2, price: '₹1,598', image: '/assets/Pink-Kurta (1).jpg' }
-            ],
-            total: '₹2,397',
-            shippingAddress: '123 Main St, City, State, 123456',
-            paymentMethod: 'Razorpay',
-            trackingNumber: 'TRK987654321'
-          },
-          {
-            id: 'ORD-12344',
-            date: '2025-08-10',
-            status: 'Shipped',
-            items: [
-              { name: 'Black T-Shirt', quantity: 1, price: '₹699', image: '/assets/Black T-Shirt.jpg' }
-            ],
-            total: '₹699',
-            shippingAddress: '123 Main St, City, State, 123456',
-            paymentMethod: 'Razorpay',
-            trackingNumber: 'TRK123456789'
+        // Set up a realtime listener for the user's orders
+        const unsubscribe = onValue(userOrdersRef, (snapshot) => {
+          const ordersData = [];
+          if (snapshot.exists()) {
+            snapshot.forEach((childSnapshot) => {
+              const orderData = childSnapshot.val();
+              ordersData.push({
+                id: childSnapshot.key,
+                ...orderData,
+                // Convert timestamp to Date object
+                date: orderData.timestamp ? new Date(orderData.timestamp) : new Date(),
+                // Ensure items is always an array
+                items: Array.isArray(orderData.items) ? orderData.items : [],
+                // Format total if it's a number
+                total: typeof orderData.total === 'number' ? `₹${orderData.total.toLocaleString()}` : orderData.total || '₹0',
+                // Map Realtime Database fields to match the component's expectations
+                status: orderData.status || 'processing',
+                paymentMethod: orderData.paymentMethod || 'Cash on Delivery'
+              });
+            });
           }
-        ];
-        
-        setOrders(mockOrders);
+          
+          // Sort by timestamp (newest first)
+          ordersData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          setOrders(ordersData);
+          setLoading(false);
+        }, (error) => {
+          console.error('Error fetching orders:', error);
+          setLoading(false);
+        });
+
+        return () => {
+          // Unsubscribe from the realtime listener when component unmounts
+          unsubscribe();
+        };
       } catch (error) {
-        console.error('Error fetching orders:', error);
-      } finally {
+        console.error('Error in fetchOrders:', error);
         setLoading(false);
       }
     };
 
-    fetchOrders();
+    // Set up auth state listener
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchOrders();
+      } else {
+        setOrders([]);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+    };
   }, []);
 
   const getStatusIcon = (status) => {
@@ -74,6 +97,25 @@ const Orders = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  // If user is not logged in
+  if (!auth.currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-gray-900">Please sign in to view your orders</h3>
+          <div className="mt-4">
+            <Link
+              to="/login"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Sign In
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -135,28 +177,24 @@ const Orders = () => {
                   {order.items.map((item, index) => (
                     <div key={index} className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-gray-50">
                       <div className="flex items-center">
-                        <img
-                          className="h-16 w-16 rounded object-cover mr-4"
-                          src={item.image}
-                          alt={item.name}
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://via.placeholder.com/80?text=Product';
-                          }}
-                        />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                          <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                        </div>
+                      <div className="h-16 w-16 rounded bg-gray-100 flex items-center justify-center mr-4">
+                        <FiPackage className="h-6 w-6 text-gray-400" />
                       </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                        <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                      </div>
+                    </div>
                       <div className="mt-2 sm:mt-0 sm:col-span-2 flex justify-between items-center">
                         <p className="text-sm text-gray-900">{item.price}</p>
-                        <Link
-                          to={`/details/${item.id}`}
-                          className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-                        >
-                          View Product
-                        </Link>
+                        {item.id && (
+                          <Link
+                            to={`/details/${item.id}`}
+                            className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                          >
+                            View Product
+                          </Link>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -164,7 +202,18 @@ const Orders = () => {
                 <div className="px-4 py-4 sm:px-6 flex justify-between items-center">
                   <div>
                     <p className="text-sm text-gray-500">
-                      Shipped to: {order.shippingAddress}
+                      Shipped to: {order.address?.fullName && (
+                        <span>{order.address.fullName}, </span>
+                      )}
+                      {order.address?.address1 && (
+                        <span>{order.address.address1}, </span>
+                      )}
+                      {order.address?.city && (
+                        <span>{order.address.city}, </span>
+                      )}
+                      {order.address?.state && (
+                        <span>{order.address.state} - {order.address.pincode}</span>
+                      )}
                     </p>
                     <p className="text-sm text-gray-500">
                       Payment method: {order.paymentMethod}

@@ -9,6 +9,8 @@ import { FaEnvelope } from 'react-icons/fa';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [portal, setPortal] = useState('user'); // 'user' | 'admin'
+  const ADMIN_EMAIL = 'cottonfab0001@gmail.com';
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -16,6 +18,10 @@ const Login = () => {
   useEffect(() => {
     if (isSignInWithEmailLink(auth, window.location.href)) {
       let email = window.localStorage.getItem('emailForSignIn');
+      // retrieve portal chosen before sending link
+      const storedPortal = window.localStorage.getItem('portalForSignIn') || 'user';
+      // Ensure local state reflects stored portal
+      setPortal(storedPortal);
       if (!email) {
         email = window.prompt('Please provide your email for confirmation');
       }
@@ -23,9 +29,20 @@ const Login = () => {
       signInWithEmailLink(auth, email, window.location.href)
         .then((result) => {
           window.localStorage.removeItem('emailForSignIn');
+          window.localStorage.removeItem('portalForSignIn');
           // Get the return URL from location state or default to '/'
-          const returnUrl = location.state?.from || '/';
-          navigate(returnUrl);
+          if (storedPortal === 'admin') {
+            const authedEmail = (result?.user?.email || '').toLowerCase();
+            if (authedEmail !== ADMIN_EMAIL) {
+              toast.error('You are not authorized to access the Admin portal.');
+              navigate('/');
+              return;
+            }
+            navigate('/admin');
+          } else {
+            const returnUrl = location.state?.from || '/';
+            navigate(returnUrl);
+          }
           toast.success('Successfully signed in!');
         })
         .catch((error) => {
@@ -36,11 +53,15 @@ const Login = () => {
   }, [navigate, location]);
 
   const handleGoogleSignIn = async () => {
+    if (portal === 'admin') {
+      toast.error('Admin portal does not allow Google sign-in. Please use the email magic link with the admin email.');
+      return;
+    }
     try {
       setIsLoading(true);
       await signInWithPopup(auth, googleProvider);
       // Get the return URL from location state or default to '/'
-      const returnUrl = location.state?.from || '/';
+      const returnUrl = location.state?.from || (portal === 'admin' ? '/admin' : '/');
       navigate(returnUrl);
       toast.success('Successfully signed in with Google!');
     } catch (error) {
@@ -57,11 +78,18 @@ const Login = () => {
       toast.error('Please enter your email address');
       return;
     }
+    const normalizedEmail = email.trim().toLowerCase();
+    if (portal === 'admin' && normalizedEmail !== ADMIN_EMAIL) {
+      toast.error('Only the admin email can access the Admin portal.');
+      return;
+    }
 
     try {
       setIsLoading(true);
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem('emailForSignIn', email);
+      await sendSignInLinkToEmail(auth, normalizedEmail, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', normalizedEmail);
+      // persist portal so we can redirect correctly after email link
+      window.localStorage.setItem('portalForSignIn', portal);
       toast.success(`Sign-in link sent to ${email}. Please check your email.`);
       setEmail('');
     } catch (error) {
@@ -90,28 +118,26 @@ const Login = () => {
       </div>
 
       <div className="mt-6 w-full max-w-md mx-auto">
-        <div className="bg-white py-6 px-4 sm:px-8 shadow sm:rounded-lg">
+        <div className="bg-transparent py-6 px-4 sm:px-8  sm:rounded-lg">
           <div className="space-y-6">
-            <div>
-              <button
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-                className="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm sm:text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-              >
-                <FcGoogle className="h-5 w-5 sm:h-6 sm:w-6 mr-2 flex-shrink-0" />
-                <span>{isLoading ? 'Signing in...' : 'Continue with Google'}</span>
-              </button>
-            </div>
-
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+            <div className="mb-2">
+              <div className="flex rounded-lg overflow-hidden border border-gray-300">
+                <button
+                  type="button"
+                  onClick={() => setPortal('user')}
+                  className={`flex-1 px-4 py-2 text-sm sm:text-base font-medium transition-colors duration-200 ${portal === 'user' ? 'bg-indigo-600 text-white' : 'bg-transparent text-gray-700'}`}
+                >
+                  User
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPortal('admin')}
+                  className={`flex-1 px-4 py-2 text-sm sm:text-base font-medium transition-colors duration-200 ${portal === 'admin' ? 'bg-indigo-600 text-white' : 'bg-transparent text-gray-700'}`}
+                >
+                  Admin
+                </button>
               </div>
-              <div className="relative flex justify-center">
-                <span className="px-3 bg-white text-xs sm:text-sm text-gray-500">Or continue with</span>
-              </div>
             </div>
-
             <form className="space-y-4 sm:space-y-6" onSubmit={handleEmailLinkSignIn}>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -145,6 +171,27 @@ const Login = () => {
                 </button>
               </div>
             </form>
+
+            {portal === 'user' && (
+              <>
+                <div className="flex items-center my-4">
+                  <div className="flex-1 border-t border-gray-300" />
+                  <span className="mx-3 text-xs sm:text-sm text-gray-500">Or continue with</span>
+                  <div className="flex-1 border-t border-gray-300" />
+                </div>
+
+                <div>
+                  <button
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                    className="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm sm:text-base font-medium text-gray-700 bg-transparent hover:bg-transparent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                  >
+                    <FcGoogle className="h-5 w-5 sm:h-6 sm:w-6 mr-2 flex-shrink-0" />
+                    <span>{isLoading ? 'Signing in...' : 'Continue with Google'}</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
         

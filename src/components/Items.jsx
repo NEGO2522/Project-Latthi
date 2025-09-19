@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FiShoppingCart, FiHome, FiMenu, FiX } from 'react-icons/fi';
 import { useCart } from '../contexts/CartContext';
 import { useState, useEffect } from 'react';
+import { handleImageError } from '../utils/imageUtils';
 
 const Items = () => {
   const navigate = useNavigate();
@@ -198,10 +199,7 @@ const Items = () => {
                   src={item.image}
                   alt={item.name}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = `https://via.placeholder.com/300x400?text=${item.name.split(' ').join('+')}`;
-                  }}
+                  onError={(e) => handleImageError(e, item.name)}
                 />
               </div>
               <div className="p-3 sm:p-4 flex-grow flex flex-col">
