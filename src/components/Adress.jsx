@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import emailjs from '@emailjs/browser';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMapPin, FiCreditCard, FiCheckCircle, FiTruck, FiHome, FiMail, FiPhone, FiLoader, FiX } from 'react-icons/fi';
@@ -87,6 +88,20 @@ const Adress = () => {
     setFieldErrors(errors);
     
     if (Object.keys(errors).length > 0) {
+      // Show toast for each error
+      Object.entries(errors).forEach(([field, error]) => {
+        toast.error(error, {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      });
+      
+      // Set the first error as the main validation error
       const firstError = Object.values(errors)[0];
       setValidationError(firstError);
       
@@ -94,11 +109,6 @@ const Adress = () => {
       if (errorTimeoutRef.current) {
         clearTimeout(errorTimeoutRef.current);
       }
-      
-      // Auto-dismiss error after 5 seconds
-      errorTimeoutRef.current = setTimeout(() => {
-        setValidationError('');
-      }, 5000);
       
       // Scroll to the first error field
       const firstErrorField = Object.keys(errors)[0];
@@ -248,22 +258,32 @@ const Adress = () => {
             
             toast.success('Payment successful!');
             
-            // Save order to Firebase after successful payment
-            await saveAddressToDatabase({
+            // Prepare order data
+            const orderCompleteData = {
               ...orderData,
               paymentId: paymentId,
               razorpayOrderId: orderId,
               razorpaySignature: signature
+            };
+            
+            // Save order to Firebase after successful payment
+            await saveAddressToDatabase(orderCompleteData);
+            
+            // Send order confirmation email
+            await sendOrderConfirmationEmail(form.email, {
+              fullName: form.fullName,
+              orderId: orderId || `order_${Date.now()}`,
+              total: order.amount,
+              address: form,
+              item: {
+                name: item.name,
+                quantity: item.quantity || 1
+              }
             });
             
             // Navigate to order success page
             navigate('/order-placed', {
-              state: {
-                ...orderData,
-                paymentId: paymentId,
-                razorpayOrderId: orderId,
-                razorpaySignature: signature
-              }
+              state: orderCompleteData
             });
           } catch (error) {
             console.error('Error processing payment success:', error);
@@ -291,22 +311,6 @@ const Adress = () => {
           address: `${form.address1}, ${form.city}, ${form.state} - ${form.pincode}`,
           item: item.name,
           quantity: item.quantity || 1
-        },
-        // Important: This ensures the callback is called only after payment
-        handler: function(response) {
-          // This will be called after successful payment
-          console.log('Payment successful:', response);
-          toast.success('Payment successful!');
-          
-          navigate('/order-placed', {
-            state: {
-              item: item,
-              total: total,
-              orderId: response.razorpay_order_id,
-              paymentId: response.razorpay_payment_id,
-              address: form
-            }
-          });
         }
       };
 
@@ -344,6 +348,37 @@ const Adress = () => {
       console.error('Payment error:', error);
       toast.error('An error occurred during payment. Please try again.');
       setIsProcessing(false);
+    }
+  };
+
+  const sendOrderConfirmationEmail = async (userEmail, orderDetails) => {
+    try {
+      // Initialize EmailJS with your public key
+      emailjs.init('ysnBHfSgoyz0mMUgP');
+
+      // Format the order total
+      const orderTotal = `₹${(orderDetails.total / 100).toFixed(2)}`;
+      
+      // Send the email using your EmailJS service and template
+      await emailjs.send(
+        'service_ldbz037',
+        'template_3sqwp3j',
+        {
+          to_email: userEmail,
+          to_name: orderDetails.fullName,
+          order_id: orderDetails.orderId,
+          order_total: orderTotal,
+          delivery_address: `${orderDetails.address.address1}, ${orderDetails.address.city}, ${orderDetails.address.state} - ${orderDetails.address.pincode}`,
+          item_name: orderDetails.item.name,
+          quantity: orderDetails.item.quantity || 1,
+          message: 'Thank you for ordering our product. Your order has been accepted by our team. You will receive your order within 3 business days.'
+        }
+      );
+      
+      console.log('Order confirmation email sent successfully');
+    } catch (error) {
+      console.error('Failed to send order confirmation email:', error);
+      // Don't show error to user as the order was still successful
     }
   };
 
