@@ -13,8 +13,8 @@ const Carousel = () => {
   
   // Replace these with your actual image paths
   const images = [
-    '/assets/t-shir.jpg',
-    '/assets/shirts.avif',
+    '/assets/Kurti.png',
+    '/assets/Kurti(1).png',
   ];
 
   useEffect(() => {
