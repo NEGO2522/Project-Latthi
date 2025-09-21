@@ -14,13 +14,11 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Action Code Settings for Email Link Authentication
   const actionCodeSettings = {
-    url: window.location.origin + '/login', // Assumes login page is at /login
+    url: `${window.location.origin}/login`,
     handleCodeInApp: true,
   };
 
-  // Check if we're handling a sign-in with email link
   useEffect(() => {
     if (isSignInWithEmailLink(auth, window.location.href)) {
       let email = window.localStorage.getItem('emailForSignIn');
@@ -31,46 +29,44 @@ const Login = () => {
         email = window.prompt('Please provide your email for confirmation');
       }
       
-      signInWithEmailLink(auth, email, window.location.href)
-        .then((result) => {
-          window.localStorage.removeItem('emailForSignIn');
-          window.localStorage.removeItem('portalForSignIn');
-          
-          if (storedPortal === 'admin') {
+      if (email) {
+        signInWithEmailLink(auth, email, window.location.href)
+          .then((result) => {
+            window.localStorage.removeItem('emailForSignIn');
+            window.localStorage.removeItem('portalForSignIn');
+            
             const authedEmail = (result?.user?.email || '').toLowerCase();
-            if (authedEmail !== ADMIN_EMAIL) {
-              toast.error('You are not authorized to access the Admin portal.');
+            if (storedPortal === 'admin' && authedEmail !== ADMIN_EMAIL) {
+              toast.error('You are not authorized for the Admin portal.');
               navigate('/');
-              return;
+            } else {
+              const returnUrl = storedPortal === 'admin' ? '/admin' : (location.state?.from || '/');
+              navigate(returnUrl);
+              toast.success('Successfully signed in!');
             }
-            navigate('/admin');
-          } else {
-            const returnUrl = location.state?.from || '/';
-            navigate(returnUrl);
-          }
-          toast.success('Successfully signed in!');
-        })
-        .catch((error) => {
-          console.error('Error signing in with email link', error);
-          toast.error('Error signing in. Please try again.');
-        });
+          })
+          .catch((error) => {
+            console.error('Sign-in error', error);
+            toast.error('Error signing in. Please try again.');
+          });
+      }
     }
-  }, [navigate, location]);
+  }, [navigate, location, auth]);
 
   const handleGoogleSignIn = async () => {
     if (portal === 'admin') {
-      toast.error('Admin portal does not allow Google sign-in.');
+      toast.error('Admin portal does not support Google sign-in.');
       return;
     }
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       await signInWithPopup(auth, googleProvider);
       const returnUrl = location.state?.from || '/';
       navigate(returnUrl);
-      toast.success('Successfully signed in with Google!');
+      toast.success('Signed in with Google!');
     } catch (error) {
-      console.error('Error signing in with Google:', error);
-      toast.error('Failed to sign in with Google');
+      console.error('Google sign-in error:', error);
+      toast.error('Failed to sign in with Google.');
     } finally {
       setIsLoading(false);
     }
@@ -79,76 +75,71 @@ const Login = () => {
   const handleEmailLinkSignIn = async (e) => {
     e.preventDefault();
     if (!email) {
-      toast.error('Please enter your email address');
+      toast.error('Please enter your email.');
       return;
     }
     const normalizedEmail = email.trim().toLowerCase();
     if (portal === 'admin' && normalizedEmail !== ADMIN_EMAIL) {
-      toast.error('Only the admin email can access the Admin portal.');
+      toast.error('Invalid admin email.');
       return;
     }
 
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       await sendSignInLinkToEmail(auth, normalizedEmail, actionCodeSettings);
       window.localStorage.setItem('emailForSignIn', normalizedEmail);
       window.localStorage.setItem('portalForSignIn', portal);
-      toast.success(`Sign-in link sent to ${email}. Check your inbox.`);
+      toast.success(`A sign-in link has been sent to ${email}.`);
       setEmail('');
     } catch (error) {
-      console.error('Error sending sign-in link:', error);
-      toast.error('Failed to send sign-in link. Please try again.');
+      console.error('Email link error:', error);
+      toast.error('Failed to send sign-in link.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 px-4 sm:px-6 lg:px-8">
-      <ToastContainer position="top-center" autoClose={5000} />
-      <div className="w-full max-w-md mx-auto">
+    <div className="min-h-screen flex flex-col justify-center py-6 px-4 sm:px-6 lg:px-8">
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">
-            <span className="text-indigo-600">LATHI</span>
+            <Link to="/" className="text-indigo-600 hover:text-indigo-700">LATHI</Link>
           </h1>
-          <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+          <h2 className="mt-4 text-2xl sm:text-3xl font-extrabold text-gray-900">
+            Access Your Account
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Choose your preferred sign-in method
+            Secure and easy sign-in for users and admins.
           </p>
         </div>
       </div>
 
-      <div className="mt-6 w-full max-w-md mx-auto">
-        <div className="bg-transparent py-6 px-4 sm:px-8  sm:rounded-lg">
-          <div className="space-y-6">
-            <div className="mb-2">
-              <div className="flex rounded-lg overflow-hidden border border-gray-300">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="py-8 px-4 shadow-md sm:rounded-lg sm:px-10">
+          <div className="mb-6">
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden">
                 <button
-                  type="button"
                   onClick={() => setPortal('user')}
-                  className={`flex-1 px-4 py-2 text-sm sm:text-base font-medium transition-colors duration-200 ${portal === 'user' ? 'bg-indigo-600 text-white' : 'bg-transparent text-gray-700'}`}
+                  className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${portal === 'user' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                 >
-                  User
+                  User Portal
                 </button>
                 <button
-                  type="button"
                   onClick={() => setPortal('admin')}
-                  className={`flex-1 px-4 py-2 text-sm sm:text-base font-medium transition-colors duration-200 ${portal === 'admin' ? 'bg-indigo-600 text-white' : 'bg-transparent text-gray-700'}`}
+                  className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${portal === 'admin' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                 >
-                  Admin
+                  Admin Portal
                 </button>
               </div>
             </div>
-            <form className="space-y-4 sm:space-y-6" onSubmit={handleEmailLinkSignIn}>
+            <form className="space-y-6" onSubmit={handleEmailLinkSignIn}>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email address
-                </label>
-                <div className="relative rounded-md shadow-sm">
+                <label htmlFor="email" className="sr-only">Email address</label>
+                <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaEnvelope className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                    <FaEnvelope className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     id="email"
@@ -158,8 +149,8 @@ const Login = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-9 sm:pl-10 text-sm sm:text-base border-gray-300 rounded-lg p-2.5 sm:p-3 border"
-                    placeholder="you@example.com"
+                    className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                    placeholder="Enter your email address"
                   />
                 </div>
               </div>
@@ -168,46 +159,44 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm sm:text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="w-full btn-primary py-3 px-4 disabled:opacity-60"
                 >
-                  {isLoading ? 'Sending link...' : 'Send me a magic link'}
+                  {isLoading ? 'Sending Link...' : 'Continue with Email'}
                 </button>
               </div>
             </form>
 
             {portal === 'user' && (
               <>
-                <div className="flex items-center my-4">
-                  <div className="flex-1 border-t border-gray-300" />
-                  <span className="mx-3 text-xs sm:text-sm text-gray-500">Or continue with</span>
-                  <div className="flex-1 border-t border-gray-300" />
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 text-gray-500">Or</span>
+                  </div>
                 </div>
 
                 <div>
                   <button
                     onClick={handleGoogleSignIn}
                     disabled={isLoading}
-                    className="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm sm:text-base font-medium text-gray-700 bg-transparent hover:bg-transparent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                    className="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
                   >
-                    <FcGoogle className="h-5 w-5 sm:h-6 sm:w-6 mr-2 flex-shrink-0" />
-                    <span>{isLoading ? 'Signing in...' : 'Continue with Google'}</span>
+                    <FcGoogle className="h-5 w-5 mr-3" />
+                    {isLoading ? 'Please wait...' : 'Sign in with Google'}
                   </button>
                 </div>
               </>
             )}
-          </div>
         </div>
         
-        <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm">
-          <p className="text-gray-600">
-            By signing in, you agree to our{' '}
-            <Link to="/terms" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Terms
-            </Link>{' '}
-            and{' '}
-            <Link to="/privacy" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Privacy Policy
-            </Link>
+        <div className="mt-6 text-center text-xs text-gray-600">
+          <p>
+            By signing in, you agree to our {' '}
+            <Link to="/terms" className="font-medium text-indigo-600 hover:underline">Terms of Service</Link>
+            {' '}&{' '}
+            <Link to="/privacy" className="font-medium text-indigo-600 hover:underline">Privacy Policy</Link>.
           </p>
         </div>
       </div>

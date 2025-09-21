@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck, FiMinus, FiPlus, FiEdit2, FiSave, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck, FiMinus, FiPlus, FiEdit2, FiSave, FiX, FiTrash2 } from 'react-icons/fi';
 import { useCart } from '../contexts/CartContext';
 import { handleImageError } from '../utils/imageUtils';
 import { toast } from 'react-toastify';
@@ -27,14 +27,14 @@ const Details = () => {
 
   useEffect(() => {
     const fetchProduct = async () => {
+      setLoading(true);
       try {
-        const productRef = ref(database, `products/${id}`);
-        const snapshot = await get(productRef);
+        const snapshot = await get(ref(database, `products/${id}`));
         if (snapshot.exists()) {
-          const productData = snapshot.val();
-          setProduct(productData);
-          setSelectedSize(productData.sizes[0] || '');
-          setEditData(productData);
+          const data = snapshot.val();
+          setProduct(data);
+          setSelectedSize(data.sizes?.[0] || '');
+          setEditData(data);
         } else {
           toast.error('Product not found!');
           navigate('/');
@@ -52,8 +52,7 @@ const Details = () => {
     const user = auth.currentUser;
     if (user) {
       const adminEmail = user.email?.toLowerCase();
-      const isAdminUser = adminEmail?.endsWith('@admin.com') || adminEmail === 'cottonfab0001@gmail.com';
-      setIsAdmin(isAdminUser);
+      setIsAdmin(adminEmail?.endsWith('@admin.com') || adminEmail === 'cottonfab0001@gmail.com');
     }
   }, [id, navigate, auth]);
 
@@ -63,13 +62,13 @@ const Details = () => {
   };
 
   const handleArrayEdit = (field, index, value) => {
-    const newArray = [...editData[field]];
+    const newArray = [...(editData[field] || [])];
     newArray[index] = value;
     setEditData(prev => ({ ...prev, [field]: newArray }));
   };
   
   const addArrayField = (field) => {
-    setEditData(prev => ({ ...prev, [field]: [...prev[field], ''] }));
+    setEditData(prev => ({ ...prev, [field]: [...(prev[field] || []), ''] }));
   };
   
   const removeArrayField = (field, index) => {
@@ -78,10 +77,9 @@ const Details = () => {
   };
   
   const handleSave = async () => {
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      const productRef = ref(database, `products/${id}`);
-      await update(productRef, editData);
+      await update(ref(database, `products/${id}`), editData);
       setProduct(prev => ({ ...prev, ...editData }));
       setIsEditing(false);
       toast.success('Product updated successfully!');
@@ -95,69 +93,59 @@ const Details = () => {
   
   const toggleEdit = () => {
     if (isEditing) {
-      setEditData(product);
+      setEditData(product); // Reset changes if canceling
     }
     setIsEditing(!isEditing);
   };
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || !selectedSize) {
+      toast.warn('Please select a size.');
+      return;
+    }
     setIsAdding(true);
     try {
-      addToCart({ id, name: product.name, price: product.price, images: product.images }, selectedSize, quantity);
-      toast.success('Added to cart!');
+      addToCart({ id, name: product.name, price: product.price, image: product.images[0] }, selectedSize, quantity);
+      toast.success(`${quantity} x ${product.name} (Size: ${selectedSize}) added to cart!`);
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast.error('Failed to add to cart');
     } finally {
-      setIsAdding(false);
+      setTimeout(() => setIsAdding(false), 1000);
     }
   };
 
   const handleBuyNow = () => {
-    if (!product) return;
-    navigate('/address', { state: { item: { id, name: product.name, price: product.price, images: product.images, size: selectedSize, quantity } } });
+    if (!product || !selectedSize) {
+      toast.warn('Please select a size.');
+      return;
+    }
+    const itemToPurchase = { ...product, id, size: selectedSize, quantity };
+    navigate('/adress', { state: { item: itemToPurchase } });
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
-
-  if (!product) {
-    return <div className="flex items-center justify-center min-h-screen">Product not found.</div>;
-  }
+  if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  if (!product) return <div className="flex items-center justify-center min-h-screen">Product not found.</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => navigate(-1)}
-              className="flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <FiArrowLeft className="mr-2" /> Back
+        <header className="flex flex-wrap gap-y-4 justify-between items-center mb-6">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <button onClick={() => navigate(-1)} className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-900">
+              <FiArrowLeft className="mr-2 h-4 w-4" /> Back
             </button>
             {isAdmin && (
-              <button
-                onClick={toggleEdit}
-                className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
-                  isEditing 
-                    ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                }`}
-              >
-                {isEditing ? <><FiX className="mr-1" /> Cancel</> : <><FiEdit2 className="mr-1" /> Edit Product</>}
-              </button>
-            )}
-            {isEditing && (
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
-              >
-                <FiSave className="mr-1" /> {isSaving ? 'Saving...' : 'Save Changes'}
-              </button>
+              <div className="flex items-center space-x-2">
+                <button onClick={toggleEdit} className={`flex items-center px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium ${isEditing ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                  {isEditing ? <><FiX className="mr-1" /> Cancel</> : <><FiEdit2 className="mr-1" /> Edit</>}
+                </button>
+                {isEditing && (
+                  <button onClick={handleSave} disabled={isSaving} className="flex items-center px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium bg-green-100 text-green-700 disabled:opacity-50">
+                    <FiSave className="mr-1" /> {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                )}
+              </div>
             )}
           </div>
           <Link to="/cart" className="relative p-2 text-gray-700 hover:text-indigo-600">
@@ -165,21 +153,20 @@ const Details = () => {
             {getCartCount() > 0 && 
               <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                 {getCartCount()}
-              </span>
-            }
+              </span>}
           </Link>
-        </div>
+        </header>
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 p-4 sm:p-6">
             <div className="space-y-4">
               <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-100">
-                <img src={product.images[selectedImageIndex]} alt={product.name} className="h-full w-full object-cover" onError={handleImageError} />
+                <img src={editData.images?.[selectedImageIndex] || ''} alt={editData.name} className="h-full w-full object-cover object-center" onError={handleImageError} />
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {product.images.map((image, index) => (
-                  <button key={index} type="button" onClick={() => setSelectedImageIndex(index)} className={`overflow-hidden rounded-lg ${selectedImageIndex === index ? 'ring-2 ring-offset-2 ring-indigo-500' : ''}`}>
-                    <img src={image} alt={`${product.name} ${index + 1}`} className="h-24 w-full object-cover" onError={handleImageError} />
+              <div className="grid grid-cols-4 gap-2">
+                {editData.images?.map((image, index) => (
+                  <button key={index} type="button" onClick={() => setSelectedImageIndex(index)} className={`block overflow-hidden rounded-lg border ${selectedImageIndex === index ? 'ring-2 ring-indigo-500' : 'border-gray-200'}`}>
+                    <img src={image} alt={`${editData.name} ${index + 1}`} className="h-20 w-full object-cover" onError={handleImageError} />
                   </button>
                 ))}
               </div>
@@ -187,19 +174,53 @@ const Details = () => {
 
             <div className="py-2">
               {isEditing ? (
-                <div className="space-y-4">
-                  {/* Edit form fields */}
+                <div className="space-y-4 text-sm">
+                  <input name="name" value={editData.name} onChange={handleEditChange} placeholder="Product Name" className="w-full input-field" />
+                  <input name="price" value={editData.price} onChange={handleEditChange} placeholder="Price" className="w-full input-field" />
+                  <textarea name="description" value={editData.description} onChange={handleEditChange} placeholder="Description" rows="4" className="w-full input-field" />
+                  {/* More fields... */}
                 </div>
               ) : (
-                <>
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
-                  <p className="text-xl font-semibold text-gray-900 mt-2">₹{product.price}</p>
-                  <p className="text-gray-600 mt-4">{product.description}</p>
-                </>
+                <div className="space-y-4">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{product.name}</h1>
+                  <p className="text-2xl font-semibold text-indigo-600">₹{product.price}</p>
+                  <p className="text-gray-600 text-sm sm:text-base">{product.description}</p>
+                  
+                  <div>
+                      <h3 className="text-sm font-medium text-gray-900 mb-2">Select Size</h3>
+                      <div className="flex flex-wrap gap-2">
+                          {product.sizes.map(size => (
+                              <button key={size} onClick={() => setSelectedSize(size)} className={`px-4 py-2 text-sm border rounded-md ${selectedSize === size ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}>
+                                  {size}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">Quantity</h3>
+                    <div className="flex items-center border rounded-md w-fit">
+                        <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-600"><FiMinus/></button>
+                        <span className="px-4 py-2 w-12 text-center">{quantity}</span>
+                        <button onClick={() => setQuantity(q => q + 1)} className="px-3 py-2 text-gray-600"><FiPlus/></button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                      <button onClick={handleAddToCart} disabled={isAdding} className="flex-1 btn-primary flex items-center justify-center">
+                          {isAdding ? <FiCheck className="mr-2"/> : <FiShoppingCart className="mr-2"/>} 
+                          {isAdding ? 'Added!' : 'Add to Cart'}
+                      </button>
+                      <button onClick={handleBuyNow} className="flex-1 btn-secondary flex items-center justify-center">Buy Now</button>
+                  </div>
+
+                  <div className="space-y-3 pt-4 text-sm text-gray-600">
+                    {product.features && <div className="flex items-start"><FiCheck className="w-4 h-4 mr-2 mt-1 text-green-500"/><span>{product.features.join(', ')}</span></div>}
+                    {product.fabric && <div className="flex items-start"><FiCheck className="w-4 h-4 mr-2 mt-1 text-green-500"/><span>Fabric: {product.fabric}</span></div>}
+                    {product.careInstructions && <div className="flex items-start"><FiCheck className="w-4 h-4 mr-2 mt-1 text-green-500"/><span>Care: {product.careInstructions.join(', ')}</span></div>}
+                  </div>
+                </div>
               )}
-
-              {/* Rest of the component code for displaying product details */}
-
             </div>
           </div>
         </div>

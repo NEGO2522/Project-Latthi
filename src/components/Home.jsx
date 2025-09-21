@@ -3,73 +3,17 @@ import { useNavigate, Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth, database, ref, push, get } from '../firebase/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiChevronLeft, FiChevronRight, FiShoppingCart, FiPackage, FiUser, FiMenu, FiX } from 'react-icons/fi';
+import { FiChevronDown, FiShoppingCart, FiPackage, FiUser, FiMenu, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { useCart } from '../contexts/CartContext';
-
-// Image Carousel Component
-const Carousel = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  
-  const images = [
-    '/assets/Kurti.png',
-    '/assets/Kurti(1).png',
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 3000);
-
-    return () => clearInterval(timer);
-  }, [images.length]);
-
-  return (
-    <div className="relative w-full h-full">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentIndex}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ 
-            opacity: 1, 
-            scale: 1,
-            transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
-          }}
-          exit={{ 
-            opacity: 0, 
-            scale: 1.1,
-            transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
-          }}
-          className="absolute inset-0 w-full h-full"
-        >
-          <img 
-            src={images[currentIndex]} 
-            alt={`Slide ${currentIndex + 1}`}
-            className="w-full h-full object-contain"
-          />
-        </motion.div>
-      </AnimatePresence>
-      
-      {/* Indicators */}
-      <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
-        {images.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentIndex(index)}
-            className={`w-2 h-2 rounded-full transition-all ${currentIndex === index ? 'bg-white w-6' : 'bg-white/50'}`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
 
 const Home = ({ user, isAdmin }) => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showTagline, setShowTagline] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
+  const [isDesktopCategoryOpen, setIsDesktopCategoryOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const menuRef = useRef(null);
@@ -83,8 +27,7 @@ const Home = ({ user, isAdmin }) => {
         const snapshot = await get(productsRef);
         if (snapshot.exists()) {
           const allProducts = snapshot.val();
-          // Get the last 2 added products
-          const recentProducts = Object.keys(allProducts).slice(-2).reduce((obj, key) => {
+          const recentProducts = Object.keys(allProducts).slice(-3).reduce((obj, key) => {
             obj[key] = allProducts[key];
             return obj;
           }, {});
@@ -147,6 +90,19 @@ const Home = ({ user, isAdmin }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  const categories = [
+    { name: 'One piece', value: 'one-piece' },
+    { name: 'Two piece', value: 'two-piece' },
+    { name: 'Three piece', value: 'three-piece' },
+    { name: 'Short Kurti', value: 'short-kurti' },
+  ];
+
+  const handleCategorySelect = (category) => {
+      navigate(`/items?category=${category}`);
+      setIsMenuOpen(false);
+      setIsDesktopCategoryOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <div className="fixed top-0 left-0 right-0 z-50 bg-gray-50 py-2 shadow-sm">
@@ -168,7 +124,7 @@ const Home = ({ user, isAdmin }) => {
                 ease: [0.4, 0, 0.2, 1],
                 delay: 0.1
               }}
-              className="flex items-center justify-center md:justify-start w-full md:w-auto"
+              className="flex items-center space-x-8"
             >
               <div className="flex items-center space-x-2">
                 <img 
@@ -180,6 +136,40 @@ const Home = ({ user, isAdmin }) => {
                   LATHI
                 </h1>
               </div>
+              <div className="hidden md:flex items-center">
+                <div className="relative">
+                    <button
+                        onClick={() => setIsDesktopCategoryOpen(!isDesktopCategoryOpen)}
+                        className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                        <span>Categories</span>
+                        <FiChevronDown className={`ml-1 h-4 w-4 transition-transform duration-200 ${isDesktopCategoryOpen ? 'transform rotate-180' : ''}`} />
+                    </button>
+                    <AnimatePresence>
+                        {isDesktopCategoryOpen && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute mt-2 w-48 bg-white rounded-md shadow-lg z-20"
+                            >
+                                <div className="py-1">
+                                    {categories.map(category => (
+                                        <button
+                                            key={category.value}
+                                            onClick={() => handleCategorySelect(category.value)}
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            {category.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </div>
             </motion.div>
 
             <div className="hidden md:flex items-center space-x-4">
@@ -244,31 +234,12 @@ const Home = ({ user, isAdmin }) => {
                 </motion.div>
               )}
             </div>
-          </div>
-
-          <motion.div 
-            className="md:hidden mt-3 text-center"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ 
-              delay: 0.3, 
-              duration: 0.6,
-              ease: [0.4, 0, 0.2, 1],
-              y: { stiffness: 1000, velocity: -100 }
-            }}
-          >
-            <div className="flex items-center justify-center space-x-2">
-              <button className="text-gray-500">
-                <FiChevronLeft className="w-4 h-4" />
-              </button>
-              <p className="text-xs font-medium text-gray-700">
-                Free shipping on orders over $50
-              </p>
-              <button className="text-gray-500">
-                <FiChevronRight className="w-4 h-4" />
-              </button>
+             <div className="md:hidden flex items-center">
+                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-md text-gray-600 hover:bg-gray-100">
+                    {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+                </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       </header>
 
@@ -368,8 +339,8 @@ const Home = ({ user, isAdmin }) => {
 
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
-          <div className="h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden rounded-xl md:rounded-2xl shadow-lg md:shadow-xl">
-            <Carousel />
+          <div className="w-full overflow-hidden rounded-xl md:rounded-2xl">
+            <img src="/assets/Home.png" alt="Home" className="w-full h-full object-contain" />
           </div>
           
           <motion.div 
@@ -383,7 +354,12 @@ const Home = ({ user, isAdmin }) => {
             </h2>
             
             <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg">
-              Discover our exclusive collection of premium Kurti designed for those who dare to stand out. Quality meets comfort in every stitch.
+                <span className="hidden sm:block">
+                    At Lathi, we believe in the power of self-expression. Our kurtis are designed for the modern woman who is confident, bold, and unapologetically herself. We blend traditional craftsmanship with contemporary designs to create pieces that are not just clothes, but a statement.
+                </span>
+                <span className="sm:hidden">
+                    Discover kurtis designed for the confident, modern woman. A blend of tradition and contemporary style.
+                </span>
             </p>
             
             <div className="space-y-6">
@@ -396,8 +372,11 @@ const Home = ({ user, isAdmin }) => {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">Premium Quality</h3>
-                  <p className="text-gray-600 text-sm">Crafted from the finest materials for ultimate comfort.</p>
+                  <h3 className="font-medium text-gray-900">Exceptional Quality</h3>
+                  <p className="text-gray-600 text-sm">
+                    <span className="hidden sm:block">Our kurtis are crafted from the finest materials, ensuring a soft, breathable, and comfortable fit that lasts.</span>
+                    <span className="sm:hidden">Crafted from the finest materials for a comfortable fit.</span>
+                  </p>
                 </div>
               </div>
               
@@ -411,7 +390,10 @@ const Home = ({ user, isAdmin }) => {
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900">Unique Designs</h3>
-                  <p className="text-gray-600 text-sm">Stand out with our exclusive, limited-edition prints.</p>
+                  <p className="text-gray-600 text-sm">
+                    <span className="hidden sm:block">Stand out with our exclusive, limited-edition prints that you won't find anywhere else.</span>
+                    <span className="sm:hidden">Exclusive, limited-edition prints.</span>
+                  </p>
                 </div>
               </div>
               
@@ -424,8 +406,28 @@ const Home = ({ user, isAdmin }) => {
                   </div>
                 </div>
                 <div>
+                  <h3 className="font-medium text-gray-900">Perfect Fit</h3>
+                  <p className="text-gray-600 text-sm">
+                    <span className="hidden sm:block">Our kurtis are designed to flatter every body type, with a comfortable and stylish fit that you'll love.</span>
+                    <span className="sm:hidden">Designed to flatter every body type.</span>
+                  </p>
+                </div>
+              </div>
+
+                <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0 mt-1">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div>
                   <h3 className="font-medium text-gray-900">Eco-Friendly</h3>
-                  <p className="text-gray-600 text-sm">Sustainable materials that care for the planet.</p>
+                  <p className="text-gray-600 text-sm">
+                    <span className="hidden sm:block">We use sustainable materials and ethical manufacturing processes to create our kurtis.</span>
+                    <span className="sm:hidden">Sustainable materials and ethical manufacturing.</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -540,7 +542,7 @@ const Home = ({ user, isAdmin }) => {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.text)}
                     placeholder="Your email address"
                     className="w-full sm:flex-grow px-4 py-3 sm:py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     required
