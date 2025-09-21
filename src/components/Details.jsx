@@ -204,11 +204,13 @@ const Details = () => {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                      <button onClick={handleAddToCart} disabled={isAdding} className="flex-1 btn-primary flex items-center justify-center">
+                      <button onClick={handleAddToCart} disabled={isAdding} className="flex-1 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1">
                           {isAdding ? <FiCheck className="mr-2"/> : <FiShoppingCart className="mr-2"/>} 
                           {isAdding ? 'Added!' : 'Add to Cart'}
                       </button>
-                      <button onClick={handleBuyNow} className="flex-1 btn-secondary flex items-center justify-center">Buy Now</button>
+                      <button onClick={handleBuyNow} className="flex-1 flex items-center justify-center bg-transparent hover:bg-indigo-600 text-indigo-700 font-semibold hover:text-white py-3 px-6 border border-indigo-500 hover:border-transparent rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1">
+                          Buy Now
+                      </button>
                   </div>
 
                   <div className="space-y-3 pt-4 text-sm text-gray-600">

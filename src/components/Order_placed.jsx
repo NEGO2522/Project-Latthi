@@ -21,11 +21,6 @@ const OrderPlaced = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Banner */}
-      <div className="bg-gray-50 border-b border-gray-100">
-        <div className="container mx-auto px-4 py-3 text-center text-sm text-gray-700">
-          Order confirmed. We sent a confirmation email with your order details.
-        </div>
-      </div>
 
       <div className="container mx-auto px-4 sm:px-6 md:px-8 py-10">
         <motion.div

@@ -166,10 +166,7 @@ const Items = () => {
           </aside>
 
           <main className="flex-1">
-            <div className="hidden md:block text-center mb-10">
-                <h1 className="text-4xl font-extrabold text-gray-800">Our Collection</h1>
-                <p className="mt-2 text-gray-500 max-w-2xl mx-auto">Discover our exclusive range of handcrafted items, made with the finest materials and attention to detail.</p>
-            </div>
+           
             
             <AnimatePresence>
               {filteredItems.length > 0 ? (

@@ -1,0 +1,18 @@
+{
+  "name": "Lathi",
+  "short_name": "Lathi",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fff",
+  "description": "Lathi is a fashion brand that offers a unique collection of kurtis for the modern woman.",
+  "icons": [
+    {
+      "src": "/assets/Logo.png",
+      "type": "image/png",
+      "sizes": "any"
+    }
+  ],
+  "serviceworker": {
+    "src": "sw.js"
+  }
+}
