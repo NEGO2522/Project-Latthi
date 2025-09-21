@@ -1,5 +1,5 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp, getApp, getApps } from "firebase/app";
+import { initializeApp, getApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { 
   getAuth, 
@@ -10,7 +10,7 @@ import {
   signInWithPopup,
   onAuthStateChanged
 } from "firebase/auth";
-import { getDatabase, ref, set, push, onValue } from "firebase/database";
+import { getDatabase, ref, set, push, onValue, remove } from "firebase/database";
 
 // Import environment variables
 import env from '../env';
@@ -52,23 +52,6 @@ googleProvider.setCustomParameters({
   prompt: 'select_account', // Forces account selection even when one account is available
 });
 
-// Action Code Settings for Email Link Authentication
-const actionCodeSettings = {
-  url: window.location.origin + '/login',
-  handleCodeInApp: true,
-};
-
-// Auth state change handler
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    // User is signed in
-    console.log('User is signed in:', user.uid);
-  } else {
-    // User is signed out
-    console.log('User is signed out');
-  }
-});
-
 export { 
   app,
   auth, 
@@ -79,9 +62,9 @@ export {
   signInWithEmailLink, 
   signInWithPopup, 
   onAuthStateChanged,
-  actionCodeSettings,
   ref, 
   set, 
   push, 
-  onValue 
+  onValue,
+  remove
 };

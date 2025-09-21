@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ref, push, set, get, update } from 'firebase/database';
+import { ref, push, set, get, update, remove } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { database, app } from '../firebase/firebase';
 import { toast } from 'react-toastify';
@@ -465,7 +465,7 @@ const Admin = () => {
                 disabled={isSubmitting}
                 className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {isSubmitting ? 'Adding Product...' : 'Add Product'}
+                {isSubmitting ? (editingId ? 'Updating Product...' : 'Adding Product...') : (editingId ? 'Update Product' : 'Add Product')}
               </button>
             </div>
           </form>
@@ -508,6 +508,20 @@ const Admin = () => {
                           )}
                         </div>
                       </div>
+                    </div>
+                    <div className="ml-5 flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(id)}
+                        className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-md text-sm font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(id)}
+                        className="ml-2 px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm font-medium"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </li>

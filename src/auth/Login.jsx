@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { auth, googleProvider, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signInWithPopup, actionCodeSettings } from '../firebase/firebase';
+import { auth, googleProvider, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signInWithPopup } from '../firebase/firebase';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FcGoogle } from 'react-icons/fc';
@@ -14,14 +14,19 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Action Code Settings for Email Link Authentication
+  const actionCodeSettings = {
+    url: window.location.origin + '/login', // Assumes login page is at /login
+    handleCodeInApp: true,
+  };
+
   // Check if we're handling a sign-in with email link
   useEffect(() => {
     if (isSignInWithEmailLink(auth, window.location.href)) {
       let email = window.localStorage.getItem('emailForSignIn');
-      // retrieve portal chosen before sending link
       const storedPortal = window.localStorage.getItem('portalForSignIn') || 'user';
-      // Ensure local state reflects stored portal
       setPortal(storedPortal);
+
       if (!email) {
         email = window.prompt('Please provide your email for confirmation');
       }
@@ -30,7 +35,7 @@ const Login = () => {
         .then((result) => {
           window.localStorage.removeItem('emailForSignIn');
           window.localStorage.removeItem('portalForSignIn');
-          // Get the return URL from location state or default to '/'
+          
           if (storedPortal === 'admin') {
             const authedEmail = (result?.user?.email || '').toLowerCase();
             if (authedEmail !== ADMIN_EMAIL) {
@@ -54,14 +59,13 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     if (portal === 'admin') {
-      toast.error('Admin portal does not allow Google sign-in. Please use the email magic link with the admin email.');
+      toast.error('Admin portal does not allow Google sign-in.');
       return;
     }
     try {
       setIsLoading(true);
       await signInWithPopup(auth, googleProvider);
-      // Get the return URL from location state or default to '/'
-      const returnUrl = location.state?.from || (portal === 'admin' ? '/admin' : '/');
+      const returnUrl = location.state?.from || '/';
       navigate(returnUrl);
       toast.success('Successfully signed in with Google!');
     } catch (error) {
@@ -88,9 +92,8 @@ const Login = () => {
       setIsLoading(true);
       await sendSignInLinkToEmail(auth, normalizedEmail, actionCodeSettings);
       window.localStorage.setItem('emailForSignIn', normalizedEmail);
-      // persist portal so we can redirect correctly after email link
       window.localStorage.setItem('portalForSignIn', portal);
-      toast.success(`Sign-in link sent to ${email}. Please check your email.`);
+      toast.success(`Sign-in link sent to ${email}. Check your inbox.`);
       setEmail('');
     } catch (error) {
       console.error('Error sending sign-in link:', error);
