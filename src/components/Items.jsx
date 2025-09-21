@@ -1,16 +1,67 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiShoppingCart, FiHome, FiMenu, FiX } from 'react-icons/fi';
+import { FiShoppingCart, FiHome, FiMenu, FiX, FiLoader } from 'react-icons/fi';
 import { useCart } from '../contexts/CartContext';
 import { useState, useEffect } from 'react';
 import { handleImageError } from '../utils/imageUtils';
+import { ref, onValue } from 'firebase/database';
+import { database } from '../firebase/firebase';
 
 const Items = () => {
   const navigate = useNavigate();
   const { getCartCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch products from Firebase
+  useEffect(() => {
+    const fetchProducts = () => {
+      try {
+        const productsRef = ref(database, 'products');
+        onValue(productsRef, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            // Convert the object of products to an array and include the product ID
+            const productsArray = Object.entries(data).map(([id, product]) => ({
+              id,
+              ...product,
+              // Ensure the image is an array and has at least one item
+              image: Array.isArray(product.images) && product.images.length > 0 
+                ? product.images[0] 
+                : '/assets/placeholder.jpg',
+              // Ensure price is a string with ₹ symbol if it's a number
+              price: typeof product.price === 'number' 
+                ? `₹${product.price}` 
+                : product.price || '₹0',
+              // Ensure sizes is an array
+              sizes: Array.isArray(product.sizes) ? product.sizes : [],
+              // Default inStock to true if not specified
+              inStock: product.inStock !== false
+            }));
+            setItems(productsArray);
+          } else {
+            setItems([]);
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error('Error fetching products:', error);
+          setError('Failed to load products. Please try again later.');
+          setLoading(false);
+        });
+      } catch (error) {
+        console.error('Error in fetchProducts:', error);
+        setError('An error occurred while loading products.');
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Handle window resize for mobile menu
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 640);
@@ -22,49 +73,67 @@ const Items = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  
-  const handleCheckout = (itemId) => {
-    navigate(`/details/${itemId}`);
+
+  // Handle checkout
+  const handleCheckout = (item) => {
+    // Add to cart logic here
+    // You can implement this based on your cart functionality
+    console.log('Added to cart:', item);
   };
-  
-  const items = [
-    { 
-      id: 1, 
-      name: 'White Kurta', 
-      image: '/assets/White Kurta.jpg', 
-      price: '₹799',
-      description: 'Elegant white kurta with intricate embroidery',
-      sizes: ['S', 'M', 'L', 'XL'],
-      inStock: true
-    },
-    { 
-      id: 2, 
-      name: 'White Shirt', 
-      image: '/assets/White-Shirt (3).jpg', 
-      price: '₹699',
-      description: 'Classic blue kurta with minimal design',
-      sizes: ['S', 'M', 'L', 'XL'],
-      inStock: true
-    },
-    { 
-      id: 3, 
-      name: 'Pink Shirt', 
-      image: '/assets/Pink-Kurta (3).jpg', 
-      price: '₹799',
-      description: 'Sleek black kurta with golden accents',
-      sizes: ['M', 'L', 'XL'],
-      inStock: true
-    },
-    { 
-      id: 4, 
-      name: 'Black T-Shirt', 
-      image: '/assets/Black T-Shirt.jpg', 
-      price: '₹699',
-      description: 'Light beige kurta with subtle patterns',
-      sizes: ['S', 'M', 'L', 'XL'],
-      inStock: false
-    }
-  ];
+
+  // Handle buy now (direct checkout)
+  const handleBuyNow = (item) => {
+    // Navigate to the address/checkout page with the selected item
+    navigate('/adress', { 
+      state: { 
+        item: {
+          ...item,
+          // Ensure we have the correct price format
+          price: typeof item.price === 'number' 
+            ? `₹${item.price}` 
+            : item.price || '₹0',
+          // Ensure quantity is set
+          quantity: 1
+        } 
+      } 
+    });
+  };
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <div className="flex items-center">
+          <FiLoader className="animate-spin text-4xl text-gray-600" />
+          <span className="ml-2 text-lg">Loading products...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4 text-center">
+        <p className="text-red-600 text-lg mb-4">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Render empty state
+  if (items.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <p className="text-gray-600 text-lg">No products available at the moment.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -78,7 +147,7 @@ const Items = () => {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-blur bg-opacity-50 backdrop-blur-sm z-40"
             onClick={() => setIsMenuOpen(false)}
-          ></motion.div>
+          />
         )}
       </AnimatePresence>
 
@@ -185,62 +254,73 @@ const Items = () => {
             </div>
           </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 px-2 sm:px-4">
-          {items.map((item) => (
-            <motion.div 
-              key={item.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="group relative bg-white rounded-lg overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition-shadow duration-200 h-full flex flex-col"
-            >
-              <div className="h-40 sm:h-52 w-full overflow-hidden flex-shrink-0">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
-                  onError={(e) => handleImageError(e, item.name)}
-                />
-              </div>
-              <div className="p-3 sm:p-4 flex-grow flex flex-col">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 line-clamp-1">{item.name}</h2>
-                    <p className="mt-0.5 text-base font-medium text-indigo-600">{item.price}</p>
-                  </div>
-                  <div className={`text-xs font-medium px-2 py-0.5 rounded-full ${item.inStock ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {item.inStock ? 'In Stock' : 'Out of Stock'}
-                  </div>
+          {/* Product Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 px-2 sm:px-4">
+            {items.map((item) => (
+              <motion.div 
+                key={item.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="group relative bg-white rounded-lg overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition-shadow duration-200 h-full flex flex-col"
+              >
+                <div className="h-40 sm:h-52 w-full overflow-hidden flex-shrink-0">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
+                    onError={(e) => handleImageError(e, item.name)}
+                  />
                 </div>
-                
-                <p className="mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]">{item.description}</p>
-                
-                <div className="mt-2 sm:mt-3">
-                  <div className="flex flex-wrap gap-1.5">
-                    {item.sizes.map((size) => (
-                      <button 
-                        key={size}
-                        type="button"
-                        className="w-8 h-8 text-xs flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                <div className="p-3 sm:p-4 flex-grow flex flex-col">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900 line-clamp-1">{item.name}</h2>
+                      <p className="mt-0.5 text-base font-medium text-indigo-600">{item.price}</p>
+                    </div>
+                    <div className={`text-xs font-medium px-2 py-0.5 rounded-full ${item.inStock ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {item.inStock ? 'In Stock' : 'Out of Stock'}
+                    </div>
+                  </div>
+                  
+                  <p className="mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]">
+                    {item.description}
+                  </p>
+                  
+                  <div className="mt-2 sm:mt-3">
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {item.sizes?.map((size) => (
+                        <button 
+                          key={size}
+                          type="button"
+                          className="w-8 h-8 text-xs flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleCheckout(item)}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-3 rounded-md text-sm font-medium transition-colors duration-200 flex items-center justify-center"
+                        disabled={!item.inStock}
                       >
-                        {size}
+                        <FiShoppingCart className="mr-2" />
+                        {item.inStock ? 'Add to Cart' : 'Out of Stock'}
                       </button>
-                    ))}
+                      <button
+                        onClick={() => handleBuyNow(item)}
+                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors duration-200 flex items-center justify-center whitespace-nowrap"
+                        disabled={!item.inStock}
+                      >
+                        Buy Now
+                      </button>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="mt-3 sm:mt-4 pt-2 border-t border-gray-100">
-                  <button
-                    onClick={() => handleCheckout(item.id)}
-                    type="button"
-                    className="w-full bg-indigo-600 border border-transparent rounded-md py-2 px-3 text-xs sm:text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-500 transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
-                  >
-                    Check it out
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
           </div>
         </div>
       </div>

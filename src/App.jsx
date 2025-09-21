@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { auth } from './firebase/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { CartProvider } from './contexts/CartContext';
+import { toast } from 'react-toastify';
 import Home from './components/Home';
 import Login from './auth/Login';
 import Items from './components/Items';
@@ -13,6 +14,8 @@ import Orders from './components/Orders';
 import Adress from './components/adress';
 import OrderPlaced from './components/Order_placed';
 import Delivery from './components/delivery';
+import Admin from './components/Admin';
+import AdminOrders from './components/AdminOrders';
 
 // Placeholder components for other routes
 const Shop = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">Shop Page (Coming Soon)</div>;
@@ -49,11 +52,16 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      // Check if user is admin (email ends with @admin.com or matches specific admin email)
+      const adminEmail = user?.email?.toLowerCase();
+      const isAdminUser = adminEmail?.endsWith('@admin.com') || adminEmail === 'cottonfab0001@gmail.com';
+      setIsAdmin(isAdminUser);
       setLoading(false);
     });
 
@@ -64,13 +72,38 @@ function App() {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
+  // Redirect to admin if user is admin
+  const AdminRoute = ({ children }) => {
+    if (loading) return <div>Loading...</div>;
+    if (!user) return <Navigate to="/login" state={{ from: '/admin' }} replace />;
+    if (!isAdmin) {
+      toast.error('Unauthorized access');
+      return <Navigate to="/" replace />;
+    }
+    return children;
+  };
+
+  // Protected route that redirects to login if not authenticated
+  const ProtectedRoute = ({ children }) => {
+    if (loading) return <div>Loading...</div>;
+    if (!user) return <Navigate to="/login" state={{ from: window.location.pathname }} replace />;
+    return children;
+  };
+
+  // Redirect to admin if admin user tries to access login
+  const LoginRoute = () => {
+    if (loading) return <div>Loading...</div>;
+    if (user) return <Navigate to={isAdmin ? '/admin' : '/'} replace />;
+    return <Login />;
+  };
+
   return (
     <CartProvider>
       <Router>
         <div className="min-h-screen flex flex-col">
           <Routes>
-            <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-            <Route path="/" element={<Home user={user} />} />
+            <Route path="/login" element={<LoginRoute />} />
+            <Route path="/" element={<Home user={user} isAdmin={isAdmin} />} />
             <Route 
               path="/shop" 
               element={
@@ -122,11 +155,27 @@ function App() {
               } 
             />
             <Route 
-              path="/address" 
+              path="/adress" 
               element={
                 <ProtectedRoute>
                   <Adress />
                 </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
+                <AdminRoute>
+                  <Admin />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/orders" 
+              element={
+                <AdminRoute>
+                  <AdminOrders />
+                </AdminRoute>
               } 
             />
             <Route 

@@ -1,19 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import env from '../env';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck, FiMinus, FiPlus } from 'react-icons/fi';
+import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
+import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck, FiMinus, FiPlus, FiEdit2, FiSave, FiX } from 'react-icons/fi';
 import { useCart } from '../contexts/CartContext';
 import { handleImageError } from '../utils/imageUtils';
 import { toast } from 'react-toastify';
+import { getAuth } from 'firebase/auth';
+import { ref, update } from 'firebase/database';
+import { database } from '../firebase/firebase';
 
 const Details = () => {
   const [selectedSize, setSelectedSize] = useState('M');
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({});
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const { addToCart, getCartCount } = useCart();
+  const auth = getAuth();
 
   // Product database
   const products = {
@@ -130,7 +140,110 @@ const Details = () => {
     // Add more products as needed
   };
 
-  const product = products[id] || products[1]; // Default to first product if ID not found
+  const [product, setProduct] = useState(products[id] || products[1]);
+  
+  // Check if user is admin
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+      const adminEmail = user.email?.toLowerCase();
+      const isAdminUser = adminEmail?.endsWith('@admin.com') || adminEmail === 'cottonfab0001@gmail.com';
+      setIsAdmin(isAdminUser);
+      
+      // Initialize edit data when product loads
+      if (product) {
+        setEditData({
+          name: product.name || '',
+          price: product.price || '',
+          description: product.description || '',
+          fabric: product.fabric || '',
+          color: product.color || '',
+          sizes: Array.isArray(product.sizes) ? [...product.sizes] : [],
+          images: product.images && product.images.length > 0 ? [...product.images] : [''],
+          features: product.features && product.features.length > 0 ? [...product.features] : [''],
+          careInstructions: product.careInstructions && product.careInstructions.length > 0 ? [...product.careInstructions] : ['']
+        });
+      }
+    }
+  }, [id, product, auth.currentUser]);
+  
+  // Handle input changes for edit mode
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  // Handle array field changes (features, careInstructions, etc.)
+  const handleArrayEdit = (field, index, value) => {
+    const newArray = [...editData[field]];
+    newArray[index] = value;
+    setEditData(prev => ({
+      ...prev,
+      [field]: newArray
+    }));
+  };
+  
+  // Add new array field
+  const addArrayField = (field) => {
+    setEditData(prev => ({
+      ...prev,
+      [field]: [...prev[field], '']
+    }));
+  };
+  
+  // Remove array field
+  const removeArrayField = (field, index) => {
+    const newArray = editData[field].filter((_, i) => i !== index);
+    setEditData(prev => ({
+      ...prev,
+      [field]: newArray
+    }));
+  };
+  
+  // Save changes
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      const productRef = ref(database, `products/${id}`);
+      await update(productRef, editData);
+      
+      // Update local state
+      setProduct(prev => ({
+        ...prev,
+        ...editData
+      }));
+      
+      setIsEditing(false);
+      toast.success('Product updated successfully!');
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast.error('Failed to update product');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  // Toggle edit mode
+  const toggleEdit = () => {
+    if (isEditing) {
+      // Reset edit data when canceling
+      setEditData({
+        name: product.name || '',
+        price: product.price || '',
+        description: product.description || '',
+        fabric: product.fabric || '',
+        color: product.color || '',
+        sizes: Array.isArray(product.sizes) ? [...product.sizes] : [],
+        images: product.images && product.images.length > 0 ? [...product.images] : [''],
+        features: product.features && product.features.length > 0 ? [...product.features] : [''],
+        careInstructions: product.careInstructions && product.careInstructions.length > 0 ? [...product.careInstructions] : ['']
+      });
+    }
+    setIsEditing(!isEditing);
+  };
 
   const handleAddToCart = async () => {
     if (!id) return;
@@ -194,12 +307,43 @@ const Details = () => {
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <button 
-            onClick={() => navigate(-1)}
-            className="flex items-center text-gray-600 hover:text-gray-900"
-          >
-            <FiArrowLeft className="mr-2" /> Back to Shop
-          </button>
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => navigate(-1)}
+              className="flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <FiArrowLeft className="mr-2" /> Back
+            </button>
+            {isAdmin && (
+              <button
+                onClick={toggleEdit}
+                className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                  isEditing 
+                    ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                }`}
+              >
+                {isEditing ? (
+                  <>
+                    <FiX className="mr-1" /> Cancel
+                  </>
+                ) : (
+                  <>
+                    <FiEdit2 className="mr-1" /> Edit Product
+                  </>
+                )}
+              </button>
+            )}
+            {isEditing && (
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
+              >
+                <FiSave className="mr-1" /> {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            )}
+          </div>
           <Link 
             to="/cart"
             className="relative p-2 text-gray-700 hover:text-indigo-600 transition-colors"
@@ -226,34 +370,170 @@ const Details = () => {
                   onError={(e) => handleImageError(e, product.name)}
                 />
               </div>
-              <div className="grid grid-cols-4 gap-4 mt-4">
-                {product.images.map((img, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`aspect-w-1 aspect-h-1 overflow-hidden rounded-lg transition-all duration-200 ${
-                      selectedImageIndex === index ? 'ring-2 ring-indigo-500 ring-offset-2' : 'ring-1 ring-gray-200 hover:ring-2 hover:ring-indigo-300'
-                    }`}
-                  >
-                    <img
-                      src={img}
-                      alt={`${product.name} view ${index + 1}`}
-                      className="h-full w-full object-cover object-center"
-                      onError={(e) => handleImageError(e, product.name)}
-                    />
-                  </button>
-                ))}
+              <div className="mt-6">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-medium text-gray-900">Product Images</h3>
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => addArrayField('images')}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      + Add Image
+                    </button>
+                  )}
+                </div>
+                {isEditing ? (
+                  <div className="space-y-4">
+                    {editData.images.map((image, index) => (
+                      <div key={index} className="flex items-center">
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={image}
+                            onChange={(e) => handleArrayEdit('images', index, e.target.value)}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            placeholder="Enter image URL"
+                          />
+                          {image && (
+                            <div className="mt-2">
+                              <img
+                                src={image}
+                                alt={`Preview ${index + 1}`}
+                                className="h-20 object-cover rounded"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = '/placeholder-image.jpg';
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeArrayField('images', index)}
+                          className="ml-2 text-red-600 hover:text-red-800"
+                        >
+                          <FiX className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                    {product.images.map((image, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setSelectedImageIndex(index)}
+                        className={`overflow-hidden rounded-lg ${
+                          selectedImageIndex === index ? 'ring-2 ring-offset-2 ring-indigo-500' : ''
+                        }`}
+                      >
+                        <img
+                          src={image}
+                          alt={`${product.name} ${index + 1}`}
+                          className="h-24 w-full object-cover object-center"
+                          onError={handleImageError}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Product Details */}
             <div className="py-2">
-              <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-              <p className="mt-3 text-2xl font-medium text-indigo-600">{product.price}</p>
-              
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Product Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={editData.name}
+                      onChange={handleEditChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Price</label>
+                    <input
+                      type="text"
+                      name="price"
+                      value={editData.price}
+                      onChange={handleEditChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea
+                      name="description"
+                      value={editData.description}
+                      onChange={handleEditChange}
+                      rows="3"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
+                  <p className="text-xl font-semibold text-gray-900 mt-2">{product.price}</p>
+                  <p className="text-gray-600 mt-4">{product.description}</p>
+                </>
+              )}
               <div className="mt-6">
                 <h2 className="text-lg font-medium text-gray-900">Description</h2>
                 <p className="mt-2 text-gray-600">{product.description}</p>
+              </div>
+
+              <div className="mt-8">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-medium text-gray-900">Features</h3>
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => addArrayField('features')}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      + Add Feature
+                    </button>
+                  )}
+                </div>
+                {isEditing ? (
+                  <div className="mt-2 space-y-2">
+                    {editData.features.map((feature, index) => (
+                      <div key={index} className="flex items-center">
+                        <input
+                          type="text"
+                          value={feature}
+                          onChange={(e) => handleArrayEdit('features', index, e.target.value)}
+                          className="flex-1 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                          placeholder="Enter feature"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeArrayField('features', index)}
+                          className="ml-2 text-red-600 hover:text-red-800"
+                        >
+                          <FiX className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <ul className="mt-2 space-y-1">
+                    {product.features.map((feature, index) => (
+                      <li key={index} className="flex items-center">
+                        <FiCheck className="h-5 w-5 text-green-500 mr-2" />
+                        <span className="text-gray-600">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               <div className="mt-6">
@@ -287,23 +567,53 @@ const Details = () => {
               </div>
 
               <div className="mt-6">
-                <h2 className="text-lg font-medium text-gray-900">Size</h2>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {product.sizes.map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => setSelectedSize(size)}
-                      className={`w-12 h-10 flex items-center justify-center rounded-md border ${
-                        selectedSize === size
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
+                <h3 className="text-sm font-medium text-gray-900">Sizes</h3>
+                {isEditing ? (
+                  <div className="mt-2">
+                    <div className="flex flex-wrap gap-2">
+                      {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => {
+                            const newSizes = editData.sizes.includes(size)
+                              ? editData.sizes.filter(s => s !== size)
+                              : [...editData.sizes, size];
+                            setEditData(prev => ({
+                              ...prev,
+                              sizes: newSizes
+                            }));
+                          }}
+                          className={`px-4 py-2 border rounded-md text-sm font-medium ${
+                            editData.sizes.includes(size)
+                              ? 'bg-gray-900 text-white border-transparent'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">Selected: {editData.sizes.join(', ') || 'None'}</p>
+                  </div>
+                ) : (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {product.sizes.map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-4 py-2 border rounded-md text-sm font-medium ${
+                          selectedSize === size
+                            ? 'bg-gray-900 text-white border-transparent'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="mt-6">

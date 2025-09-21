@@ -10,10 +10,71 @@ import { auth, database, ref, push, set } from '../firebase/firebase';
 // Razorpay will be loaded dynamically
 
 const Adress = () => {
+  // All hooks must be called unconditionally at the top level
   const navigate = useNavigate();
   const { state } = useLocation();
-  const item = state?.item;
+  const [item, setItem] = useState(state?.item || null);
+  const [isLoading, setIsLoading] = useState(!state?.item);
+  // Form state
+  const [form, setForm] = useState({
+    fullName: '',
+    phone: '',
+    email: '',
+    address1: '',
+    address2: '',
+    city: '',
+    state: '',
+    pincode: '',
+    paymentMethod: 'cod',
+  });
+  
+  // UI state
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [validationError, setValidationError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const errorTimeoutRef = useRef(null);
 
+  // Handle the case when component is accessed directly without state
+  useEffect(() => {
+    if (state?.item) {
+      setItem(state.item);
+      setIsLoading(false);
+    } else if (!item) { // Only redirect if we don't have an item and no item in state
+      toast.error('No product selected. Please select a product first.');
+      navigate('/items');
+    }
+  }, [state, navigate, item]);
+
+  // Show loading state if still loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <div className="flex items-center">
+          <FiLoader className="animate-spin text-4xl text-gray-600" />
+          <span className="ml-2 text-lg">Loading product details...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // If no item is available after loading, show error
+  if (!item) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 w-full max-w-md">
+          <p>No product selected. Please go back and select a product first.</p>
+        </div>
+        <button 
+          onClick={() => navigate('/items')}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+        >
+          Back to Products
+        </button>
+      </div>
+    );
+  }
+
+  // Constants
   const indianStates = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
     'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
@@ -26,33 +87,28 @@ const Adress = () => {
     'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
   ];
 
-  const [form, setForm] = useState({
-    fullName: '',
-    phone: '',
-    email: '',
-    address1: '',
-    address2: '',
-    city: '',
-    state: '',
-    pincode: '',
-    paymentMethod: 'cod',
-  });
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [validationError, setValidationError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({});
-  const errorTimeoutRef = useRef(null);
-
   // Calculate the base price number first
   const priceNumber = useMemo(() => {
     if (!item?.price) return 0;
-    const num = parseInt(String(item.price).replace(/[^0-9]/g, ''), 10);
+    // Handle both string (with ₹) and number prices
+    const priceStr = typeof item.price === 'string' 
+      ? item.price.replace(/[^0-9]/g, '') 
+      : String(item.price);
+    const num = parseInt(priceStr, 10);
     return isNaN(num) ? 0 : num;
   }, [item?.price]);
 
   // Then calculate the total based on priceNumber and quantity
   const total = useMemo(() => {
     const qty = item?.quantity ? Number(item.quantity) : 1;
-    return priceNumber * qty;
+    const subtotal = priceNumber * qty;
+    // You can add shipping, tax, etc. here if needed
+    return {
+      subtotal,
+      shipping: 0, // Add shipping cost if applicable
+      tax: 0, // Add tax if applicable
+      total: subtotal // Add any additional costs to subtotal
+    };
   }, [priceNumber, item?.quantity]);
 
   const handleChange = (e) => {
@@ -211,13 +267,16 @@ const Adress = () => {
       
       console.log('Razorpay script loaded, creating order...');
       
+      // Convert total to paise (Razorpay expects amount in smallest currency unit)
+      const amountInPaise = Math.round(total.total * 100);
+      
       // Create order on your backend
-      const order = await createRazorpayOrder(total);
+      const order = await createRazorpayOrder(amountInPaise);
       console.log('Order created:', order);
 
       const orderData = {
         item,
-        total: total / 100, // Convert to rupees
+        total: total.total, // Already in rupees
         address: form,
         paymentMethod: 'Online Payment',
         orderId: order.id,
@@ -413,7 +472,7 @@ const Adress = () => {
         orderId: orderData.orderId || `order_${Date.now()}`,
         paymentMethod: orderData.paymentMethod,
         total: orderData.total,
-        status: orderData.paymentMethod === 'Cash on Delivery' ? 'pending' : 'paid',
+        status: 'paid',
         items: itemsData
       });
 
@@ -441,7 +500,7 @@ const Adress = () => {
         item,
         total,
         address: form,
-        paymentMethod: form.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment',
+        paymentMethod: 'Online Payment',
         orderId: `order_${Date.now()}`,
       };
 
@@ -653,31 +712,13 @@ const Adress = () => {
               <h2 className="text-xl font-semibold text-gray-900">Payment Options</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label className={`cursor-pointer border rounded-xl p-4 flex items-center space-x-3 transition-all ${form.paymentMethod === 'cod' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'}`}>
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="cod"
-                  checked={form.paymentMethod === 'cod'}
-                  onChange={handleChange}
-                  className="hidden"
-                />
-                <div className="w-9 h-9 rounded-full bg-white border border-indigo-200 text-indigo-600 flex items-center justify-center">
-                  <FiTruck />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Cash on Delivery</p>
-                  <p className="text-xs text-gray-600">Pay when you receive the order</p>
-                </div>
-              </label>
-
-              <label className={`cursor-pointer border rounded-xl p-4 flex items-center space-x-3 transition-all ${form.paymentMethod === 'online' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'}`}>
+            <div className="grid grid-cols-1 gap-3">
+              <label className={`cursor-pointer border rounded-xl p-4 flex items-center space-x-3 transition-all border-indigo-500 bg-indigo-50`}>
                 <input
                   type="radio"
                   name="paymentMethod"
                   value="online"
-                  checked={form.paymentMethod === 'online'}
+                  checked={true}
                   onChange={handleChange}
                   className="hidden"
                 />
@@ -746,7 +787,7 @@ const Adress = () => {
               </div>
               <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t">
                 <span>Total</span>
-                <span>₹{total}</span>
+                <span>₹{total.total}</span>
               </div>
             </div>
 

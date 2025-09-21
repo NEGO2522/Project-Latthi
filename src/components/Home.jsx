@@ -68,7 +68,7 @@ const Carousel = () => {
 
 
 
-const Home = ({ user }) => {
+const Home = ({ user, isAdmin }) => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showTagline, setShowTagline] = useState(false);
@@ -187,6 +187,14 @@ const Home = ({ user }) => {
                       <FiUser className="w-5 h-5" />
                       <span>Sign Out</span>
                     </motion.button>
+                    {isAdmin && (
+                      <Link 
+                        to="/admin" 
+                        className="px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-full transition-colors duration-200"
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
                   </div>
                 </>
               ) : (
@@ -283,6 +291,14 @@ const Home = ({ user }) => {
                     <FiUser className="w-5 h-5 mr-2" />
                     My Account
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
                   <Link 
                     to="/orders" 
                     className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center"
@@ -342,7 +358,7 @@ const Home = ({ user }) => {
             </h2>
             
             <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg">
-              Discover our exclusive collection of premium T-shirts and shirts designed for those who dare to stand out. Quality meets comfort in every stitch.
+              Discover our exclusive collection of premium Kurti designed for those who dare to stand out. Quality meets comfort in every stitch.
             </p>
             
             <div className="space-y-6">
