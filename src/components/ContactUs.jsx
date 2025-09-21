@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaHome, FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaEnvelope, FaHome, FaFacebook, FaInstagram, FaShippingFast, FaUserSecret, FaFileContract, FaUndo } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const ContactUs = () => {
   const navigate = useNavigate();
@@ -28,6 +28,29 @@ const ContactUs = () => {
   const socialLinks = [
     { icon: <FaFacebook />, url: 'https://www.facebook.com/share/1BTHw6tsV4/' },
     { icon: <FaInstagram />, url: 'https://www.instagram.com/lathishop_?igsh=NDIxd252b2lvdzJv' }
+  ];
+
+  const quickLinks = [
+    {
+      icon: <FaShippingFast className="h-6 w-6" />,
+      title: 'Shipping',
+      to: '/shipping'
+    },
+    {
+      icon: <FaUserSecret className="h-6 w-6" />,
+      title: 'Privacy Policy',
+      to: '/privacy_policy'
+    },
+    {
+      icon: <FaFileContract className="h-6 w-6" />,
+      title: 'Terms & Conditions',
+      to: '/terms_conditions'
+    },
+    {
+      icon: <FaUndo className="h-6 w-6" />,
+      title: 'Cancellation & Refund',
+      to: '/cancellation_refund'
+    }
   ];
 
   return (
@@ -114,6 +137,31 @@ const ContactUs = () => {
                   ))}
                 </div>
               </div>
+            </div>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-white rounded-xl shadow-md p-6"
+          >
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">More Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {quickLinks.map((item, index) => (
+                <Link
+                  key={index}
+                  to={item.to}
+                  className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-indigo-50 transition-colors duration-200"
+                >
+                  <div className="flex-shrink-0 text-indigo-600">
+                    {item.icon}
+                  </div>
+                  <div className="ml-4">
+                    <p className="font-medium text-gray-800">{item.title}</p>
+                  </div>
+                </Link>
+              ))}
             </div>
           </motion.div>
         </div>

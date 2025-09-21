@@ -132,9 +132,6 @@ const Details = () => {
       <div className="max-w-7xl mx-auto">
         <header className="flex flex-wrap gap-y-4 justify-between items-center mb-6">
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <button onClick={() => navigate(-1)} className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-900">
-              <FiArrowLeft className="mr-2 h-4 w-4" /> Back
-            </button>
             {isAdmin && (
               <div className="flex items-center space-x-2">
                 <button onClick={toggleEdit} className={`flex items-center px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium ${isEditing ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>

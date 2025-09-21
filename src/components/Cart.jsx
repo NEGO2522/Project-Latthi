@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiShoppingBag, FiArrowLeft, FiTrash2, FiMinus, FiPlus, FiLoader } from 'react-icons/fi';
+import { FiShoppingBag, FiTrash2, FiMinus, FiPlus, FiLoader } from 'react-icons/fi';
 import { useCart } from '../contexts/CartContext';
 import { toast } from 'react-toastify';
 
@@ -95,7 +95,6 @@ const Cart = () => {
             to="/items" 
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
           >
-            <FiArrowLeft className="mr-2" />
             Continue Shopping
           </Link>
         </div>
@@ -181,13 +180,6 @@ const Cart = () => {
                 Shipping and taxes calculated at checkout.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Link
-                  to="/items"
-                  className="flex-1 flex items-center justify-center px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  <FiArrowLeft className="mr-2" />
-                  Continue Shopping
-                </Link>
                 <button
                   onClick={handleCheckout}
                   disabled={isProcessing}

@@ -141,13 +141,6 @@ const Orders = () => {
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <Link 
-            to="/" 
-            className="inline-flex items-center text-indigo-600 hover:text-indigo-800 mb-6"
-          >
-            <FiArrowLeft className="mr-2" />
-            Back to Home
-          </Link>
           <h1 className="text-3xl font-bold text-gray-900">Your Orders</h1>
           <p className="mt-2 text-gray-600">View and track your recent orders</p>
         </div>
@@ -159,7 +152,7 @@ const Orders = () => {
             <p className="mt-1 text-gray-500">You haven't placed any orders yet.</p>
             <div className="mt-6">
               <Link
-                to="/"
+                to="/items"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Continue Shopping

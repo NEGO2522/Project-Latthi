@@ -540,14 +540,8 @@ const Adress = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Top subtle banner like Home */}
-      <div className="bg-gray-50 border-b border-gray-100">
-        <div className="container mx-auto px-4 py-3 text-center text-sm text-gray-700">
-          Fast, tracked delivery on all orders
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-white pt-2">
+     
       {/* Header with stepper */}
       <div className="container mx-auto px-4 sm:px-6 md:px-8 pt-6">
         <motion.div

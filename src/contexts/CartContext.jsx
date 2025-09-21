@@ -11,6 +11,8 @@ export const CartProvider = ({ children }) => {
     }
     return [];
   });
+  const [message, setMessage] = useState('');
+
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -46,6 +48,8 @@ export const CartProvider = ({ children }) => {
         ];
       }
     });
+    setMessage(`${product.name} added to cart!`); 
+    setTimeout(() => setMessage(''), 3000);
   };
 
   const removeFromCart = (itemId, size) => {
@@ -90,7 +94,8 @@ export const CartProvider = ({ children }) => {
         updateQuantity,
         clearCart,
         getCartCount,
-        getCartTotal
+        getCartTotal,
+        message
       }}
     >
       {children}
