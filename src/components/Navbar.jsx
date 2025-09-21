@@ -64,7 +64,7 @@ const Navbar = ({ user, isAdmin }) => {
                   alt="Lathi Logo" 
                   className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
                 />
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 tracking-wide" style={{ fontFamily: "'Great Vibes', cursive" }}>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 tracking-wide" style={{ fontFamily: "''Great Vibes'', cursive" }}>
                   LATHI
                 </h1>
               </Link>
@@ -253,15 +253,6 @@ const Navbar = ({ user, isAdmin }) => {
                   >
                     Sign In
                   </button>
-                  <a href="#" className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                    New Arrivals
-                  </a>
-                  <a href="#" className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                    Best Sellers
-                  </a>
-                  <a href="#" className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                    Sale
-                  </a>
                 </>
               )}
             </nav>
