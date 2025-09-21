@@ -107,7 +107,7 @@ const Home = ({ user, isAdmin }) => {
     <div className="min-h-screen bg-white">
       <div className="fixed top-0 left-0 right-0 z-50 bg-gray-50 py-2 shadow-sm">
         <p className="text-center text-sm font-medium text-gray-700">
-          Lathi – Beat the Boring, Wear the Bold
+          <span style={{ fontFamily: "'Great Vibes', cursive" }}>Lathi</span> – Beat the Boring, Wear the Bold
         </p>
       </div>
       
@@ -132,7 +132,7 @@ const Home = ({ user, isAdmin }) => {
                   alt="Lathi Logo" 
                   className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
                 />
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 tracking-wide">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 tracking-wide" style={{ fontFamily: "'Great Vibes', cursive" }}>
                   LATHI
                 </h1>
               </div>
@@ -350,7 +350,7 @@ const Home = ({ user, isAdmin }) => {
             className="space-y-6"
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
-              Elevate Your Style with <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold">Lathi</span>
+              Elevate Your Style with <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold" style={{ fontFamily: "'Great Vibes', cursive" }}>Lathi</span>
             </h2>
             
             <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg">

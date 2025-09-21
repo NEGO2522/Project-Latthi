@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiShoppingBag, FiArrowLeft, FiTrash2, FiMinus, FiPlus, FiLoader } from 'react-icons/fi';
 import { useCart } from '../contexts/CartContext';
-import env from '../env';
 import { toast } from 'react-toastify';
 
 const Cart = () => {
@@ -41,12 +40,12 @@ const Cart = () => {
       const amount = getCartTotal() * 100;
       
       const options = {
-        key: env.RAZORPAY_KEY_ID,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: amount.toString(),
         currency: 'INR',
-        name: env.RAZORPAY_COMPANY_NAME || 'Your Store Name',
+        name: import.meta.env.VITE_RAZORPAY_COMPANY_NAME || 'Your Store Name',
         description: 'Order Payment',
-        image: env.RAZORPAY_COMPANY_LOGO,
+        image: import.meta.env.VITE_RAZORPAY_COMPANY_LOGO,
         handler: function (response) {
           toast.success('Payment successful! Order placed.');
           clearCart();
@@ -91,7 +90,7 @@ const Cart = () => {
             <FiShoppingBag className="w-full h-full" />
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Your cart is empty</h1>
-          <p className="text-gray-600 mb-8">Looks like you haven't added anything to your cart yet.</p>
+          <p className="text-gray-600 mb-8">Looks like you haven\'t added anything to your cart yet.</p>
           <Link 
             to="/items" 
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
@@ -193,7 +192,7 @@ const Cart = () => {
                   onClick={handleCheckout}
                   disabled={isProcessing}
                   className={`flex-1 flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white ${
-                    isProcessing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+                    isProcessing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-700'
                   }`}
                 >
                   {isProcessing ? (
