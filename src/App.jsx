@@ -16,14 +16,13 @@ import OrderPlaced from './components/Order_placed';
 import Delivery from './components/Delivery';
 import Admin from './components/Admin';
 import AdminOrders from './components/AdminOrders';
+import Subscribers from './components/Subscribers';
 
-// Placeholder components for other routes
 const Shop = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">Shop Page (Coming Soon)</div>;
 const Categories = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">Categories Page (Coming Soon)</div>;
 const About = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">About Us (Coming Soon)</div>;
-const PageNotFound = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">404 - Page Not Found</div>;
+const PageNotFound = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold">400 - Page Not Found</div>;
 
-// Main App component
 function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -41,7 +40,6 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // Protected route that redirects to login if not authenticated
   const ProtectedRoute = ({ children }) => {
     const location = useLocation();
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -49,7 +47,6 @@ function App() {
     return children;
   };
 
-  // Admin route that handles authorization
   const AdminRoute = ({ children }) => {
     const location = useLocation();
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -61,7 +58,6 @@ function App() {
     return children;
   };
 
-  // Route for the login page
   const LoginRoute = () => {
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
     if (user) return <Navigate to={isAdmin ? '/admin' : '/'} replace />;
@@ -91,6 +87,7 @@ function App() {
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
             <Route path="/admin/new" element={<AdminRoute><Admin /></AdminRoute>} />
             <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+            <Route path="/admin/subscribers" element={<AdminRoute><Subscribers /></AdminRoute>} />
             <Route path="/order-placed" element={<ProtectedRoute><OrderPlaced /></ProtectedRoute>} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>

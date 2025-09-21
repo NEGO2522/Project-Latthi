@@ -35,8 +35,12 @@ const Orders = () => {
                 date: orderData.timestamp ? new Date(orderData.timestamp) : new Date(),
                 // Ensure items is always an array
                 items: Array.isArray(orderData.items) ? orderData.items : [],
-                // Format total if it's a number
-                total: typeof orderData.total === 'number' ? `₹${orderData.total.toLocaleString()}` : orderData.total || '₹0',
+                // Format total if it's an object with a 'total' property
+                total: typeof orderData.total === 'object' && orderData.total !== null
+                  ? `₹${orderData.total.total.toLocaleString()}`
+                  : typeof orderData.total === 'number'
+                    ? `₹${orderData.total.toLocaleString()}`
+                    : orderData.total || '₹0',
                 // Map Realtime Database fields to match the component's expectations
                 status: orderData.status || 'processing',
                 paymentMethod: orderData.paymentMethod || 'Cash on Delivery'
@@ -91,6 +95,19 @@ const Orders = () => {
       default:
         return <FiPackage className="text-gray-500" />;
     }
+  };
+
+  const getOrderTitle = (order) => {
+    if (order.items && order.items.length > 0) {
+      const firstItemName = order.items[0].name;
+      const additionalItemsCount = order.items.length - 1;
+
+      if (additionalItemsCount > 0) {
+        return `${firstItemName} and ${additionalItemsCount} more`;
+      }
+      return firstItemName;
+    }
+    return `Order #${order.id}`;
   };
 
   if (loading) {
@@ -156,7 +173,7 @@ const Orders = () => {
                 <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
                   <div>
                     <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Order #{order.id}
+                      {getOrderTitle(order)}
                     </h3>
                     <p className="mt-1 max-w-2xl text-sm text-gray-500">
                       Placed on {new Date(order.date).toLocaleDateString('en-IN', {

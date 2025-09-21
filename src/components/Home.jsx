@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
-import { auth } from '../firebase/firebase';
+import { auth, database, ref, push, get } from '../firebase/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiChevronLeft, FiChevronRight, FiShoppingCart, FiPackage, FiUser, FiMenu, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -11,7 +11,6 @@ import { useCart } from '../contexts/CartContext';
 const Carousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  // Replace these with your actual image paths
   const images = [
     '/assets/Kurti.png',
     '/assets/Kurti(1).png',
@@ -46,7 +45,7 @@ const Carousel = () => {
           <img 
             src={images[currentIndex]} 
             alt={`Slide ${currentIndex + 1}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         </motion.div>
       </AnimatePresence>
@@ -66,17 +65,40 @@ const Carousel = () => {
   );
 };
 
-
-
 const Home = ({ user, isAdmin }) => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showTagline, setShowTagline] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const menuRef = useRef(null);
   const navigate = useNavigate();
   const { getCartCount } = useCart();
   
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const productsRef = ref(database, 'products');
+        const snapshot = await get(productsRef);
+        if (snapshot.exists()) {
+          const allProducts = snapshot.val();
+          // Get the last 2 added products
+          const recentProducts = Object.keys(allProducts).slice(-2).reduce((obj, key) => {
+            obj[key] = allProducts[key];
+            return obj;
+          }, {});
+          setProducts(recentProducts);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        toast.error('Failed to load products.');
+      }
+      setLoading(false);
+    };
+    fetchProducts();
+  }, []);
+
   const handleSignIn = () => {
     navigate('/login', { state: { from: window.location.pathname } });
   };
@@ -91,43 +113,53 @@ const Home = ({ user, isAdmin }) => {
       toast.error('Failed to sign out');
     }
   };
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if (email) {
+      const subscribersRef = ref(database, 'subscribers');
+      push(subscribersRef, { 
+        email: email,
+        subscribedAt: new Date().toISOString()
+      }).then(() => {
+        setIsSubscribed(true);
+        setEmail('');
+        toast.success('Thank you for subscribing! 🎉');
+      }).catch(error => {
+        console.error('Subscription error:', error);
+        toast.error('Something went wrong. Please try again.');
+      });
+    }
+  };
   
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowTagline(true);
       
-      // Loop the animation every 8 seconds (longer duration for better UX)
       const interval = setInterval(() => {
         setShowTagline(false);
-        // Slightly longer delay before showing again for smoother transition
         setTimeout(() => setShowTagline(true), 800);
       }, 8000);
       
       return () => clearInterval(interval);
-    }, 1500); // Reduced initial delay for faster first appearance
+    }, 1500);
     
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Fixed Tagline */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-gray-50 py-2 shadow-sm">
         <p className="text-center text-sm font-medium text-gray-700">
           Lathi – Beat the Boring, Wear the Bold
         </p>
       </div>
       
-      {/* Main content with padding for fixed header */}
       <div className="pt-12">
 
-      {/* Top Bar */}
       <header className="border-b border-gray-100 sticky top-0 bg-white z-50">
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between">
-            {/* Mobile Menu Button - Removed as per request */}
-
-            {/* Brand Name - Center on mobile, left on larger screens */}
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -150,11 +182,9 @@ const Home = ({ user, isAdmin }) => {
               </div>
             </motion.div>
 
-            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
               {user ? (
                 <>
-                  {/* Cart Button */}
                   <div className="hidden md:flex items-center space-x-4">
                     <Link 
                       to="/orders" 
@@ -216,7 +246,6 @@ const Home = ({ user, isAdmin }) => {
             </div>
           </div>
 
-          {/* Mobile Announcement */}
           <motion.div 
             className="md:hidden mt-3 text-center"
             initial={{ opacity: 0, y: -10 }}
@@ -243,7 +272,6 @@ const Home = ({ user, isAdmin }) => {
         </div>
       </header>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -338,15 +366,12 @@ const Home = ({ user, isAdmin }) => {
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
-          {/* Left Column - Image */}
           <div className="h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden rounded-xl md:rounded-2xl shadow-lg md:shadow-xl">
             <Carousel />
           </div>
           
-          {/* Right Column - Content */}
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -423,7 +448,6 @@ const Home = ({ user, isAdmin }) => {
         </div>
       </div>
 
-      {/* Featured Products Section */}
       <div className="bg-white py-12">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -431,92 +455,37 @@ const Home = ({ user, isAdmin }) => {
             <div className="w-20 h-1 bg-indigo-600 mx-auto"></div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-4">
-            {/* Product 1 */}
-            <motion.div 
-              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-              whileHover={{ y: -5 }}
-            >
-              <Link to="/details/1">
-                <div className="h-64 overflow-hidden">
-                  <img 
-                    src="/assets/White Kurta.jpg" 
-                    alt="White Jaipuri Cotton Printed Shirt"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium text-gray-900 mb-1">White Jaipuri Cotton Shirt</h3>
-                  <p className="text-indigo-600 font-semibold">₹799</p>
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">A shirt that is stitched with detailed precision and printed with an authentic design.</p>
-                </div>
-              </Link>
-            </motion.div>
+          {loading ? (
+             <div className="flex justify-center items-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+             </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
+              {Object.entries(products).map(([id, product]) => (
+                <motion.div 
+                  key={id}
+                  className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 max-w-xs mx-auto"
+                  whileHover={{ y: -5 }}
+                >
+                  <Link to={`/details/${id}`}>
+                    <div className="h-64 overflow-hidden">
+                      <img 
+                        src={product.images[0]} 
+                        alt={product.name}
+                        className="w-full h-full object-contain hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-medium text-gray-900 mb-1">{product.name}</h3>
+                      <p className="text-indigo-600 font-semibold">₹{product.price}</p>
+                      <p className="text-sm text-gray-500 mt-1 line-clamp-2">{product.description}</p>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
-            {/* Product 2 */}
-            <motion.div 
-              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-              whileHover={{ y: -5 }}
-            >
-              <Link to="/details/2">
-                <div className="h-64 overflow-hidden">
-                  <img 
-                    src="/assets/White-Shirt (3).jpg" 
-                    alt="White Jaipuri Printed Cotton Shirt"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium text-gray-900 mb-1">White Jaipuri Half Sleeve</h3>
-                  <p className="text-indigo-600 font-semibold">₹699</p>
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">A shirt that is stitched with detailed precision and printed with an authentic design.</p>
-                </div>
-              </Link>
-            </motion.div>
-
-            {/* Product 3 */}
-            <motion.div 
-              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-              whileHover={{ y: -5 }}
-            >
-              <Link to="/details/3">
-                <div className="h-64 overflow-hidden">
-                  <img 
-                    src="/assets/Pink-Kurta (3).jpg" 
-                    alt="Pink Jaipuri Full Sleeve Shirt"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium text-gray-900 mb-1">Pink Jaipuri Full Sleeve</h3>
-                  <p className="text-indigo-600 font-semibold">₹799</p>
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">A shirt that is stitched with detailed precision and printed with an authentic design.</p>
-                </div>
-              </Link>
-            </motion.div>
-
-            {/* Product 4 */}
-            <motion.div 
-              className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-              whileHover={{ y: -5 }}
-            >
-              <Link to="/details/4">
-                <div className="h-64 overflow-hidden">
-                  <img 
-                    src="/assets/Black T-Shirt.jpg" 
-                    alt="Black T-Shirt"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium text-gray-900 mb-1">Black T-Shirt</h3>
-                  <p className="text-indigo-600 font-semibold">₹699</p>
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">Light beige kurta with subtle patterns, perfect for casual wear.</p>
-                </div>
-              </Link>
-            </motion.div>
-          </div>
-          
           <div className="text-center mt-10">
             <Link 
               to="/items" 
@@ -528,7 +497,6 @@ const Home = ({ user, isAdmin }) => {
         </div>
       </div>
 
-      {/* Newsletter Section */}
       <div className="container mx-auto px-3 sm:px-4 py-8 sm:py-12">
         <motion.div 
           className="bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg p-4 sm:p-6 md:p-8 max-w-3xl mx-auto border border-gray-100"
@@ -565,13 +533,7 @@ const Home = ({ user, isAdmin }) => {
                 Get the latest products, offers, and updates delivered to your inbox.
               </p>
               <form 
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (email) {
-                    setIsSubscribed(true);
-                    setEmail('');
-                  }
-                }}
+                onSubmit={handleSubscribe}
                 className="space-y-3"
               >
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -587,7 +549,7 @@ const Home = ({ user, isAdmin }) => {
                     type="submit"
                     whileHover={{ 
                       scale: 1.03,
-                      boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.3)'
+                      boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0..3)'
                     }}
                     whileTap={{ 
                       scale: 0.98,

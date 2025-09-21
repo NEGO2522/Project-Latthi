@@ -10,7 +10,7 @@ import {
   signInWithPopup,
   onAuthStateChanged
 } from "firebase/auth";
-import { getDatabase, ref, set, push, onValue, remove } from "firebase/database";
+import { getDatabase, ref, set, push, onValue, remove, get } from "firebase/database";
 
 // Import environment variables
 import env from '../env';
@@ -66,5 +66,6 @@ export {
   set, 
   push, 
   onValue,
-  remove
+  remove,
+  get
 };

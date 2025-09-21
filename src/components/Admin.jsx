@@ -5,7 +5,7 @@ import { database, app } from '../firebase/firebase';
 import { toast } from 'react-toastify';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { FiPackage, FiPlusCircle } from 'react-icons/fi';
+import { FiPackage, FiPlusCircle, FiUsers, FiHome } from 'react-icons/fi';
 
 const Admin = () => {
   const [formData, setFormData] = useState({
@@ -166,7 +166,6 @@ const Admin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Basic validation
     if (!formData.name || !formData.price || !formData.description || !formData.fabric || !formData.color) {
       toast.error('Please fill in all required fields');
       return;
@@ -177,7 +176,6 @@ const Admin = () => {
       return;
     }
     
-    // Validate images
     const validImages = formData.images.filter(img => img.trim() !== '');
     if (validImages.length === 0) {
       toast.error('Please add at least one image URL');
@@ -187,7 +185,6 @@ const Admin = () => {
     try {
       setIsSubmitting(true);
       
-      // Clean up data
       const productData = {
         name: formData.name.trim(),
         price: formData.price.trim(),
@@ -203,10 +200,8 @@ const Admin = () => {
       let productId = editingId || uuidv4();
       const productRef = ref(database, `products/${productId}`);
       
-      // Save to Firebase
       await set(productRef, productData);
       
-      // Show success message
       toast.success(editingId ? 'Product updated successfully!' : 'Product added successfully!', {
         position: 'top-right',
         autoClose: 3000,
@@ -216,7 +211,6 @@ const Admin = () => {
         draggable: true,
       });
       
-      // Reset the form and fetch updated products
       resetForm();
       await fetchProducts();
       
@@ -231,11 +225,17 @@ const Admin = () => {
   const location = useLocation();
   const isProductsPage = location.pathname === '/admin';
   const isOrdersPage = location.pathname === '/admin/orders';
+  const isSubscribersPage = location.pathname === '/admin/subscribers';
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        {/* Navigation Tabs */}
+        <div className="mb-6 flex justify-between items-center">
+            <Link to="/" className="inline-flex items-center text-indigo-600 hover:text-indigo-800">
+                <FiHome className="mr-2" />
+                Back to Home
+            </Link>
+        </div>
         <div className="mb-6 border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             <Link
@@ -256,13 +256,22 @@ const Admin = () => {
                 Orders
               </div>
             </Link>
+            <Link
+              to="/admin/subscribers"
+              className={`${isSubscribersPage ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              <div className="flex items-center">
+                <FiUsers className="mr-2 h-5 w-5" />
+                Subscribers
+              </div>
+            </Link>
           </nav>
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
-              {isProductsPage ? 'Product Management' : 'Order Management'}
+              {isProductsPage ? 'Product Management' : isOrdersPage ? 'Order Management' : 'Subscribers'}
             </h1>
             {isProductsPage && (
               <Link
@@ -276,7 +285,6 @@ const Admin = () => {
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
@@ -340,7 +348,6 @@ const Admin = () => {
               </div>
             </div>
             
-            {/* Sizes */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Available Sizes</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-2">
@@ -359,7 +366,6 @@ const Admin = () => {
               </div>
             </div>
             
-            {/* Images */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Image URLs</label>
               {formData.images.map((image, index) => (
@@ -392,7 +398,6 @@ const Admin = () => {
               </button>
             </div>
             
-            {/* Features */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
               {formData.features.map((feature, index) => (
@@ -425,7 +430,6 @@ const Admin = () => {
               </button>
             </div>
             
-            {/* Care Instructions */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Care Instructions</label>
               {formData.careInstructions.map((instruction, index) => (
@@ -458,7 +462,6 @@ const Admin = () => {
               </button>
             </div>
             
-            {/* Submit Button */}
             <div className="pt-4">
               <button
                 type="submit"
@@ -471,7 +474,6 @@ const Admin = () => {
           </form>
         </div>
         
-        {/* Existing Products */}
         <div className="mt-12">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Existing Products ({Object.keys(products).length})</h2>
           <div className="bg-white shadow overflow-hidden sm:rounded-md">

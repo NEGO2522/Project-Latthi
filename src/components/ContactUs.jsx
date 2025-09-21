@@ -26,7 +26,7 @@ const ContactUs = () => {
   ];
 
   const socialLinks = [
-    { icon: <FaFacebook />, url: 'https://www.facebook.com/LathiShop' },
+    { icon: <FaFacebook />, url: 'https://www.facebook.com/share/1BTHw6tsV4/' },
     { icon: <FaInstagram />, url: 'https://www.instagram.com/lathishop_?igsh=NDIxd252b2lvdzJv' }
   ];
 
