@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { ref, push, set, get, remove } from 'firebase/database';
+import { ref, set, get, remove } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { database, app } from '../firebase/firebase';
 import { toast } from 'react-toastify';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { FiBox, FiPlus, FiEdit, FiTrash2, FiHome, FiUsers, FiClipboard } from 'react-icons/fi';
+import { FiBox, FiPlus, FiEdit, FiTrash2, FiHome, FiUsers, FiClipboard, FiMessageSquare, FiMenu, FiX } from 'react-icons/fi';
+import { AVAILABLE_SIZES, CATEGORIES } from '../constants';
 
 const Admin = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -24,13 +26,6 @@ const Admin = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [products, setProducts] = useState({});
   const [editingId, setEditingId] = useState(null);
-  const [availableSizes] = useState(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']);
-  const [categories] = useState([
-    { name: 'One piece', value: 'one-piece' },
-    { name: 'Two piece', value: 'two-piece' },
-    { name: 'Three piece', value: 'three-piece' },
-    { name: 'Short Kurti', value: 'short-kurti' },
-  ]);
   const auth = getAuth(app);
   const navigate = useNavigate();
 
@@ -64,6 +59,7 @@ const Admin = () => {
       });
       setEditingId(productId);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      setIsSidebarOpen(false); // Close sidebar on mobile when editing
     }
   };
 
@@ -103,7 +99,7 @@ const Admin = () => {
   };
 
   const handleSizesChange = (e) => {
-    const { value, checked } = e.target;
+    const { value } = e.target;
     let newSizes = formData.sizes.includes(value)
       ? formData.sizes.filter(size => size !== value)
       : [...formData.sizes, value];
@@ -180,6 +176,7 @@ const Admin = () => {
   const SideNavLink = ({ to, icon, children }) => (
     <Link
       to={to}
+      onClick={() => setIsSidebarOpen(false)} // Close sidebar on link click
       className={`flex items-center px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors duration-200 ${location.pathname === to ? 'bg-indigo-100 text-indigo-700 font-semibold' : ''}`}
     >
       {icon}
@@ -188,28 +185,52 @@ const Admin = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <aside className="w-64 bg-white shadow-lg p-4 flex-shrink-0">
-        <div className="flex items-center justify-center mb-8">
-            <img src="/assets/Logo.png" alt="Lathi Logo" className="h-10 w-10 mr-2"/>
-            <h1 className="text-2xl font-bold text-gray-800">LATHI</h1>
+    <div className="relative flex min-h-screen bg-gray-50">
+      {/* Mobile sidebar overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-blur bg-opacity-10 z-20 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out w-64 bg-white shadow-lg p-4 flex-shrink-0 z-30 flex flex-col`}>
+        <div className="flex items-center justify-between mb-8 lg:justify-center">
+            <div className="flex items-center">
+                <img src="/assets/Logo.png" alt="Lathi Logo" className="h-10 w-10 mr-2"/>
+                <h1 className="text-2xl font-bold text-gray-800">LATHI</h1>
+            </div>
+            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-1 text-gray-600 hover:text-gray-800">
+                <FiX className="h-6 w-6" />
+            </button>
         </div>
         <nav className="space-y-2">
             <SideNavLink to="/admin" icon={<FiBox className="h-5 w-5" />}>Products</SideNavLink>
             <SideNavLink to="/admin/orders" icon={<FiClipboard className="h-5 w-5" />}>Orders</SideNavLink>
             <SideNavLink to="/admin/subscribers" icon={<FiUsers className="h-5 w-5" />}>Subscribers</SideNavLink>
+            <SideNavLink to="/admin/feedback" icon={<FiMessageSquare className="h-5 w-5" />}>Feedback</SideNavLink>
             <SideNavLink to="/" icon={<FiHome className="h-5 w-5" />}>Back to Home</SideNavLink>
         </nav>
       </aside>
 
-      <main className="flex-1 p-6 sm:p-8 lg:p-10">
+      {/* Main Content */}
+      <main className="flex-1 p-4 sm:p-6 lg:p-10">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-1">Manage your products, orders, and subscribers.</p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                <p className="text-gray-600 mt-1 text-sm md:text-base">Manage your products, orders, and subscribers.</p>
+            </div>
+            <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-2 text-gray-600 hover:text-gray-800 rounded-md lg:hidden"
+            >
+                <FiMenu className="h-6 w-6" />
+            </button>
           </div>
 
-          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg mb-10">
+          <div className="bg-white p-4 sm:p-8 rounded-2xl shadow-lg mb-10">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
               {editingId ? <FiEdit className="mr-3 text-indigo-600" /> : <FiPlus className="mr-3 text-indigo-600" />}
               {editingId ? 'Edit Product' : 'Add a New Product'}
@@ -235,7 +256,7 @@ const Admin = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                     <select name="category" value={formData.category} onChange={handleInputChange} className="w-full input-field" required>
-                      {categories.map(cat => (
+                      {CATEGORIES.map(cat => (
                         <option key={cat.value} value={cat.value}>{cat.name}</option>
                       ))}
                     </select>
@@ -253,8 +274,8 @@ const Admin = () => {
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Available Sizes</label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {availableSizes.map((size) => (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {AVAILABLE_SIZES.map((size) => (
                         <label key={size} className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer text-sm">
                           <input type="checkbox" value={size} checked={formData.sizes.includes(size)} onChange={handleSizesChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"/>
                           <span>{size}</span>
@@ -291,7 +312,7 @@ const Admin = () => {
                 </div>
               </div>
               
-              <div className="pt-4 flex items-center justify-end gap-3">
+              <div className="pt-4 flex flex-wrap items-center justify-end gap-3">
                 {editingId && (
                   <button type="button" onClick={resetForm} className="btn-secondary py-2 px-4">
                       Cancel Edit

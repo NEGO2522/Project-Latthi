@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { FiCheckCircle, FiPackage, FiHome } from 'react-icons/fi';
 import { handleImageError } from '../utils/imageUtils';
 
@@ -23,10 +22,7 @@ const OrderPlaced = () => {
       {/* Banner */}
 
       <div className="container mx-auto px-4 sm:px-6 md:px-8 py-10">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+        <div
           className="max-w-2xl mx-auto bg-white border border-gray-100 rounded-2xl shadow-sm p-6 sm:p-8 text-center"
         >
           <div className="mx-auto w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
@@ -60,29 +56,24 @@ const OrderPlaced = () => {
           </div>
 
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => navigate('/orders')}
               className="inline-flex items-center justify-center w-full px-5 py-3 rounded-lg border border-gray-300 text-gray-800 hover:bg-gray-50"
             >
               <FiPackage className="mr-2" /> View Orders
-            </motion.button>
+            </button>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => navigate('/items')}
               className="inline-flex items-center justify-center w-full px-5 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
             >
               <FiHome className="mr-2" /> Continue Shopping
-            </motion.button>
+            </button>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default OrderPlaced;
-

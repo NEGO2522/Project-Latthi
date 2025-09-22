@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiShoppingBag, FiTrash2, FiMinus, FiPlus, FiLoader } from 'react-icons/fi';
-import { useCart } from '../contexts/CartContext';
+import { useCart } from '../hooks/useCart';
 import { toast } from 'react-toastify';
+import { auth } from '../firebase/firebase';
 
 const Cart = () => {
   const { 
@@ -14,6 +15,7 @@ const Cart = () => {
   } = useCart();
   
   const [isProcessing, setIsProcessing] = useState(false);
+  const navigate = useNavigate();
 
   const loadRazorpay = () => {
     return new Promise((resolve) => {
@@ -27,6 +29,13 @@ const Cart = () => {
   };
 
   const handleCheckout = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      toast.info('Please log in to proceed to checkout.');
+      navigate('/login');
+      return;
+    }
+
     try {
       setIsProcessing(true);
       
@@ -46,7 +55,7 @@ const Cart = () => {
         name: import.meta.env.VITE_RAZORPAY_COMPANY_NAME || 'Your Store Name',
         description: 'Order Payment',
         image: import.meta.env.VITE_RAZORPAY_COMPANY_LOGO,
-        handler: function (response) {
+        handler: function () {
           toast.success('Payment successful! Order placed.');
           clearCart();
         },
@@ -107,7 +116,6 @@ const Cart = () => {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6 sm:mb-8">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Your Cart</h1>
             <button 
               onClick={clearCart}
               className="text-sm text-red-600 hover:text-red-800 p-2 rounded-md hover:bg-red-50"
@@ -124,13 +132,17 @@ const Cart = () => {
                   <div className="flex flex-col sm:flex-row">
                     <div className="flex-shrink-0 mb-4 sm:mb-0 sm:mr-6 text-center">
                       <img
-                        src={item.image}
+                        src={item.image || '/placeholder.svg'}
                         alt={item.name}
                         className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-md mx-auto"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/placeholder.svg';
+                        }}
                       />
                     </div>
                     <div className="flex-1">
-                      <div className="flex flex-col h-full">
+                      <div className="flex-col h-full">
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
                             <h3 className="text-base sm:text-lg font-medium text-gray-900">{item.name}</h3>

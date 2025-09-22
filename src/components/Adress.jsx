@@ -1,7 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import emailjs from '@emailjs/browser';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { FiMapPin, FiCreditCard, FiCheckCircle, FiHome, FiMail, FiPhone, FiLoader } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { handleImageError } from '../utils/imageUtils';
@@ -254,7 +253,7 @@ const Adress = () => {
   return (
     <div className="min-h-screen bg-white pt-2">
         <div className="container mx-auto px-4 sm:px-6 md:px-8 pt-6">
-            <motion.div
+            <div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center text-sm text-gray-600">
@@ -267,12 +266,12 @@ const Adress = () => {
                     <span className={`w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs mr-2`}>2</span>
                     <span className="font-medium">Payment</span>
                 </div>
-            </motion.div>
+            </div>
         </div>
 
       <div className="container mx-auto px-4 sm:px-6 md:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <motion.div
+          <div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
@@ -358,9 +357,9 @@ const Adress = () => {
                 </button>
                 </div>
             </form>
-          </motion.div>
+          </div>
 
-          <motion.div
+          <div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.15 }}
@@ -382,7 +381,7 @@ const Adress = () => {
               <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t"><span>Total</span><span>₹{total.total}</span></div>
             </div>
             <div className="mt-5 flex items-center text-xs text-gray-500"><FiCheckCircle className="mr-2" /> Secure checkout powered by Lathi</div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>

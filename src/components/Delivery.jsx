@@ -12,6 +12,7 @@ import {
   FaCheck,
   FaBox
 } from 'react-icons/fa';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ref, onValue, off } from 'firebase/database';

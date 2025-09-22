@@ -1,89 +1,47 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 
 const TermsConditions = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Terms & Conditions</h1>
-
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Terms & Conditions of <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold" style={{ fontFamily: "'Great Vibes', cursive" }}>Lathi</span></h1>
+        
         <div className="space-y-6 text-gray-700">
-          <p>Welcome to our website. These terms and conditions outline the rules and regulations for the use of our website and services. By accessing or using our site, you agree to be bound by these terms.</p>
-
+          <p>Lathi operates this website. The terms we, us and our, refers to Lathi. The information on the website, tools and services is for the users. Browsing through the website means the user has accepted the terms, conditions, notices and policies of the website. Visiting or purchasing from the website means you are bound to the terms and conditions. The terms apply to all the vendors, browsers, merchants, content contributors and customers. Please go through the terms and conditions mentioned on the website. If you do not agree to the conditions then do not access the website or use the services. The tools or features added to the website are also subject to terms and conditions. We reserve the right to replace or change the terms of service by posting updates on the website. You have to check such updates periodically to know the changes and decide to accept it or not. We have hosted our store on Nushop.store.</p>
+          
           <div className="p-4 border-l-4 border-indigo-500 bg-indigo-50">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">1. Use of Website</h2>
-            <ul className="list-disc list-inside space-y-1">
-              <li>You must be at least 18 years of age to use this website.</li>
-              <li>You agree to use the website only for lawful purposes and in a way that does not infringe the rights of others.</li>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Online Store Terms</h2>
+            <ul className="list-disc list-inside space-y-2">
+              <li>You have to be a major to agree to the terms and conditions.</li>
+              <li>With your consent, dependents can also use the website.</li>
+              <li>Our products cannot be used illegally or for unauthorized purposes.</li>
+              <li>Our services cannot be used to violate the laws in your jurisdiction.</li>
+              <li>Any type of destructive virus, worm or code cannot be transmitted by you.</li>
+              <li>Violation or breach of any of the terms and conditions may lead to termination of your services.</li>
             </ul>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">2. Product Information</h2>
-            <ul className="list-disc list-inside space-y-1">
-              <li>We strive to ensure all product descriptions, prices, and availability are accurate. However, errors may occur and we reserve the right to correct them without prior notice.</li>
-              <li>All images are for illustrative purposes only. The actual product may vary slightly.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">3. Pricing and Payment</h2>
-            <ul className="list-disc list-inside space-y-1">
-              <li>All prices are listed in INR (₹) and are inclusive of applicable taxes unless stated otherwise.</li>
-              <li>We accept payments through secure payment gateways including Razorpay and others.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">4. Shipping and Delivery</h2>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Orders are processed and shipped as per our <Link to="/shipping" className="text-indigo-600 hover:underline">Shipping Policy</Link>.</li>
-              <li>Delivery timelines may vary based on location and unforeseen circumstances.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">5. Cancellations and Refunds</h2>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Cancellation and refund requests are governed by our <Link to="/cancellation_refund" className="text-indigo-600 hover:underline">Cancellation & Refund Policy</Link>.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">6. Intellectual Property</h2>
-            <ul className="list-disc list-inside space-y-1">
-              <li>All content on this website, including text, graphics, logos, images, and software, is the property of the company and protected by applicable copyright laws.</li>
-              <li>You may not reproduce, distribute, or commercially exploit any content without prior written permission.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">7. Limitation of Liability</h2>
-            <ul className="list-disc list-inside space-y-1">
-              <li>We are not liable for any indirect, incidental, or consequential damages arising from the use of our website or products.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">8. Changes to Terms</h2>
-            <ul className="list-disc list-inside space-y-1">
-              <li>We reserve the right to update or modify these terms at any time without prior notice.</li>
-              <li>Your continued use of the site constitutes your acceptance of the revised terms.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">9. Governing Law</h2>
-            <p>These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts located in Jaipur, Rajasthan.</p>
           </div>
 
           <div className="pt-4 border-t border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">10. Contact Us</h2>
-            <p>
-              If you have any questions about these Terms & Conditions, please contact us at{' '}
-              <a href="mailto:cottonfab0001@gmail.com" className="text-indigo-600 hover:underline">cottonfab0001@gmail.com</a>.
-            </p>
+            <ul className="list-disc list-inside space-y-4">
+              <li>
+                <span className="font-semibold">General Conditions:</span> Without prior permission, you cannot duplicate, sell, copy or resell any information on the website. We reserve the rules to deny service to anyone at any time for any reason.
+              </li>
+              <li>
+                <span className="font-semibold">Accuracy, Completeness and Timeliness Of Information:</span> If the information provided on the website is not accurate we are not responsible. It is always better to re-confirm the information and then take decisions to avoid risks.
+              </li>
+              <li>
+                <span className="font-semibold">Modifications To The Service And Prices:</span> The price of the products or services can change without any prior notice. We are not liable to you or any other third party for a change in price or suspension of services.
+              </li>
+              <li>
+                <span className="font-semibold">Products Or Services:</span> The products and services may have limited quantities subject to the stock available. The display on the website may not accurately display the product colour. Return or exchange is subjected to our return or exchange policy. We do not give a warranty that our products, services and information can meet your expectations.
+              </li>
+            </ul>
           </div>
+
+          <div className="pt-4 border-t border-gray-200">
+            <p>For any further questions, please don't hesitate to contact us at <a href="mailto:cottonfab0001@gmail.com" className="text-indigo-600 hover:text-indigo-800">cottonfab0001@gmail.com</a>.</p>
+          </div>
+
         </div>
       </div>
     </div>

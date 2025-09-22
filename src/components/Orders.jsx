@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowLeft, FiPackage, FiClock, FiCheckCircle, FiTruck, FiXCircle } from 'react-icons/fi';
 import { auth, database, ref, onValue } from '../firebase/firebase';
-import { handleImageError } from '../utils/imageUtils';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -140,11 +139,6 @@ const Orders = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Your Orders</h1>
-          <p className="mt-2 text-gray-600">View and track your recent orders</p>
-        </div>
-
         {orders.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <FiPackage className="mx-auto h-12 w-12 text-gray-400" />

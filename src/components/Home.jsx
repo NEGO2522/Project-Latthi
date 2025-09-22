@@ -1,19 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
-import { auth, database, ref, push, get } from '../firebase/firebase';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiChevronDown, FiShoppingCart, FiPackage, FiUser, FiMenu, FiX } from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { database, ref, push, get } from '../firebase/firebase';
 import { toast } from 'react-toastify';
-import { useCart } from '../contexts/CartContext';
+import Footer from './Footer';
 
-const Home = ({ user, isAdmin }) => {
+const Home = () => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [showTagline, setShowTagline] = useState(false);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   
   useEffect(() => {
     const fetchProducts = async () => {
@@ -54,21 +49,6 @@ const Home = ({ user, isAdmin }) => {
       });
     }
   };
-  
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowTagline(true);
-      
-      const interval = setInterval(() => {
-        setShowTagline(false);
-        setTimeout(() => setShowTagline(true), 800);
-      }, 8000);
-      
-      return () => clearInterval(interval);
-    }, 1500);
-    
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -80,10 +60,7 @@ const Home = ({ user, isAdmin }) => {
             <img src="/assets/Home.png" alt="Home" className="w-full h-full object-contain" />
           </div>
           
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
+          <div 
             className="space-y-6"
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
@@ -168,22 +145,7 @@ const Home = ({ user, isAdmin }) => {
                 </div>
               </div>
             </div>
-            
-            <div className="mt-8">
-              <button 
-                onClick={() => navigate('/items')}
-                className="bg-indigo-600 text-white px-6 py-3 cursor-pointer rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200"
-              >
-                Shop Now
-              </button>
-              <button 
-                onClick={() => navigate('/contact')}
-                className="ml-4 px-6 py-3 rounded-lg font-medium border cursor-pointer border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-indigo-300 transition-colors duration-200"
-              >
-                Contact Us
-              </button>
-            </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 
@@ -201,10 +163,9 @@ const Home = ({ user, isAdmin }) => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
               {Object.entries(products).map(([id, product]) => (
-                <motion.div 
+                <div 
                   key={id}
                   className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 max-w-xs mx-auto"
-                  whileHover={{ y: -5 }}
                 >
                   <Link to={`/details/${id}`}>
                     <div className="h-64 overflow-hidden">
@@ -220,7 +181,7 @@ const Home = ({ user, isAdmin }) => {
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">{product.description}</p>
                     </div>
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
           )}
@@ -237,15 +198,8 @@ const Home = ({ user, isAdmin }) => {
       </div>
 
       <div className="container mx-auto px-3 sm:px-4 py-8 sm:py-12">
-        <motion.div 
+        <div 
           className="bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg p-4 sm:p-6 md:p-8 max-w-3xl mx-auto border border-gray-100"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          whileHover={{ 
-            scale: 1.01,
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-          }}
         >
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-xl font-bold text-gray-800">Stay Updated</h2>
@@ -259,13 +213,11 @@ const Home = ({ user, isAdmin }) => {
           </div>
           
           {isSubscribed ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
               className="text-green-600 font-medium py-2 text-center"
             >
               Thank you for subscribing! 🎉
-            </motion.div>
+            </div>
           ) : (
             <>
               <p className="text-sm text-gray-600 mb-4">
@@ -279,37 +231,25 @@ const Home = ({ user, isAdmin }) => {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.text)}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="Your email address"
                     className="w-full sm:flex-grow px-4 py-3 sm:py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     required
                   />
-                  <motion.button
+                  <button
                     type="submit"
-                    whileHover={{ 
-                      scale: 1.03,
-                      boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0..3)'
-                    }}
-                    whileTap={{ 
-                      scale: 0.98,
-                      boxShadow: '0 2px 4px -1px rgba(79, 70, 229, 0.2)'
-                    }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 400,
-                      damping: 15
-                    }}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 sm:py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 w-full sm:w-auto"
                   >
                     Subscribe
-                  </motion.button>
+                  </button>
                 </div>
               </form>
             </>
           )}
-        </motion.div>
+        </div>
       </div>
-      </div>    
+      </div> 
+      <Footer />   
     </div>
   );
 };

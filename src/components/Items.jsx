@@ -1,7 +1,7 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiShoppingCart, FiHome, FiMenu, FiX, FiLoader, FiFilter } from 'react-icons/fi';
-import { useCart } from '../contexts/CartContext';
+import { FiShoppingCart, FiMenu, FiLoader, FiFilter } from 'react-icons/fi';
+import { useCart } from '../hooks/useCart';
 import { useState, useEffect, useMemo } from 'react';
 import { handleImageError } from '../utils/imageUtils';
 import { ref, onValue } from 'firebase/database';
@@ -10,7 +10,6 @@ import { database } from '../firebase/firebase';
 const Items = () => {
   const navigate = useNavigate();
   const { getCartCount } = useCart();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const [items, setItems] = useState([]);
@@ -65,8 +64,6 @@ const Items = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleBuyNow = (item) => navigate('/adress', { state: { item: { ...item, quantity: 1 } } });
-
   const filteredItems = useMemo(() =>
     selectedCategory === 'All'
       ? items
@@ -85,7 +82,6 @@ const Items = () => {
             key={category}
             onClick={() => {
               setSelectedCategory(category);
-              if (isMobileView) setIsMenuOpen(false);
             }}
             className={`w-full text-left p-3 rounded-lg transition-all duration-200 flex justify-between items-center text-sm font-medium ${selectedCategory === category ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-indigo-50 text-gray-700'}`}>
             <span>{category}</span>
@@ -119,24 +115,17 @@ const Items = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <AnimatePresence>
-        {isMenuOpen && isMobile && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+        {isMobile && (
+          <div
             className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-40"
-            onClick={() => setIsMenuOpen(false)}
+            onClick={() => {}}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {isMenuOpen && isMobile && (
-          <motion.div
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        {isMobile && (
+          <div
             className="fixed top-0 left-0 h-full w-72 bg-gray-50 shadow-2xl z-50 overflow-y-auto"
           >
             <div className="p-4 border-b">
@@ -146,13 +135,13 @@ const Items = () => {
               </Link>
             </div>
             <CategorySidebar isMobileView={true} />
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
       <div className="max-w-screen-2xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
         <header className="flex justify-between items-center mb-6 sm:mb-8 md:hidden">
-          <button onClick={() => setIsMenuOpen(true)} className="p-2 rounded-lg bg-white shadow-sm" aria-label="Open menu"><FiMenu className="text-gray-800"/></button>
+          <button onClick={() => {}} className="p-2 rounded-lg bg-white shadow-sm" aria-label="Open menu"><FiMenu className="text-gray-800"/></button>
           <h1 className="text-xl font-bold text-gray-800">Our Collection</h1>
           <Link to="/cart" className="relative p-2 rounded-lg bg-white shadow-sm">
             <FiShoppingCart className="text-gray-800"/>
@@ -170,15 +159,10 @@ const Items = () => {
             
             <AnimatePresence>
               {filteredItems.length > 0 ? (
-                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {filteredItems.map((item) => (
-                    <motion.div 
+                    <div 
                       key={item.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.3 }}
                       className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
                     >
                       <div className="h-56 w-full overflow-hidden">
@@ -190,12 +174,12 @@ const Items = () => {
                         <p className="text-sm text-gray-600 line-clamp-2 flex-grow mb-4">{item.description}</p>
                         <div className="mt-auto flex flex-col gap-2 pt-2 border-t border-gray-100">
                            <button onClick={() => {}} className="w-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center transition-colors"><FiShoppingCart className="mr-2" />Add to Cart</button>
-                           <button onClick={() => handleBuyNow(item)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-lg text-sm font-bold transition-colors">Buy Now</button>
+                           <button onClick={() => navigate('/adress', { state: { item: { ...item, quantity: 1 } } })} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-lg text-sm font-bold transition-colors">Buy Now</button>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
-                </motion.div>
+                </div>
               ) : (
                 <div className="text-center py-20">
                   <p className="text-gray-600 text-xl font-semibold">No Products Found</p>

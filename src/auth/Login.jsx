@@ -51,7 +51,7 @@ const Login = () => {
           });
       }
     }
-  }, [navigate, location, auth]);
+  }, [navigate, location]);
 
   const handleGoogleSignIn = async () => {
     if (portal === 'admin') {

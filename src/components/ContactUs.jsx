@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { FaMapMarkerAlt, FaEnvelope, FaHome, FaFacebook, FaInstagram, FaShippingFast, FaUserSecret, FaFileContract, FaUndo } from 'react-icons/fa';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 

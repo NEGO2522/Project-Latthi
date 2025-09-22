@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck, FiMinus, FiPlus, FiEdit2, FiSave, FiX, FiTrash2 } from 'react-icons/fi';
-import { useCart } from '../contexts/CartContext';
+import { useCart } from '../hooks/useCart';
 import { handleImageError } from '../utils/imageUtils';
 import { toast } from 'react-toastify';
 import { getAuth } from 'firebase/auth';
@@ -59,21 +59,6 @@ const Details = () => {
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleArrayEdit = (field, index, value) => {
-    const newArray = [...(editData[field] || [])];
-    newArray[index] = value;
-    setEditData(prev => ({ ...prev, [field]: newArray }));
-  };
-  
-  const addArrayField = (field) => {
-    setEditData(prev => ({ ...prev, [field]: [...(prev[field] || []), ''] }));
-  };
-  
-  const removeArrayField = (field, index) => {
-    const newArray = editData[field].filter((_, i) => i !== index);
-    setEditData(prev => ({ ...prev, [field]: newArray }));
   };
   
   const handleSave = async () => {

@@ -295,28 +295,13 @@ const AdminOrders = () => {
                                         ? `/${item.images[0]}` 
                                         : item.image 
                                           ? `/${item.image}` 
-                                          : '/placeholder-product.jpg'
+                                          : '/placeholder.svg'
                             }
                             alt={item.name || 'Product image'}
                             className="h-full w-full object-cover object-center"
                             onError={(e) => {
                               e.target.onerror = null;
-                              // Try to fallback to the first image if the first one fails
-                              if (item.images?.[1]) {
-                                e.target.src = item.images[1].startsWith('http') || item.images[1].startsWith('/')
-                                  ? item.images[1]
-                                  : `/${item.images[1]}`;
-                              } else if (item.images?.[0] && e.target.src !== item.images[0]) {
-                                e.target.src = item.images[0].startsWith('http') || item.images[0].startsWith('/')
-                                  ? item.images[0]
-                                  : `/${item.images[0]}`;
-                              } else if (item.image && e.target.src !== item.image) {
-                                e.target.src = item.image.startsWith('http') || item.image.startsWith('/')
-                                  ? item.image
-                                  : `/${item.image}`;
-                              } else {
-                                e.target.src = '/placeholder-product.jpg';
-                              }
+                              e.target.src = '/placeholder.svg';
                             }}
                           />
                         </div>
