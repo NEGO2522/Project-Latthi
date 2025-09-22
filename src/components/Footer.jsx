@@ -9,7 +9,7 @@ const Footer = () => {
 
   const footerLinks = {
     support: [
-      { name: 'Contact Us', href: '/contactus' },
+      { name: 'Contact Us', href: '/contact' },
       { name: 'Feedback', href: '/feedback' },
       { name: 'Shipping', href: '/shipping' },
       { name: 'Cancellation & Refund', href: '/cancellation_refund' },
