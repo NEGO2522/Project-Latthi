@@ -3,13 +3,29 @@ import { Link } from 'react-router-dom';
 import { database, ref, push, get } from '../firebase/firebase';
 import { toast } from 'react-toastify';
 import Footer from './Footer';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const images = [
+  '/assets/Home.png',
+  '/assets/im.jpg',
+  '/assets/im1.jpg',
+  '/assets/im2.jpg',
+];
 
 const Home = () => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -56,8 +72,19 @@ const Home = () => {
 
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
-          <div className="w-full overflow-hidden rounded-xl md:rounded-2xl">
-            <img src="/assets/Home.png" alt="Home" className="w-full h-full object-contain" />
+          <div className="relative w-full h-96 overflow-hidden rounded-xl md:rounded-2xl">
+            <AnimatePresence>
+              <motion.img
+                key={currentImageIndex}
+                src={images[currentImageIndex]}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.5, ease: 'easeInOut' }}
+                className="absolute w-full h-full object-contain"
+                alt="Promotional images"
+              />
+            </AnimatePresence>
           </div>
           
           <div 
