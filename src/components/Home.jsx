@@ -68,7 +68,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="pt-12">
+      <div className="pt-2">
 
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
