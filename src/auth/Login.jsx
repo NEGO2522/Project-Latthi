@@ -4,12 +4,11 @@ import { auth, googleProvider, sendSignInLinkToEmail, isSignInWithEmailLink, sig
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FcGoogle } from 'react-icons/fc';
-import { FaEnvelope } from 'react-icons/fa';
+import { FaEnvelope, FaPaperPlane } from 'react-icons/fa';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [portal, setPortal] = useState('user'); // 'user' | 'admin'
   const ADMIN_EMAIL = 'cottonfab0001@gmail.com';
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,9 +21,6 @@ const Login = () => {
   useEffect(() => {
     if (isSignInWithEmailLink(auth, window.location.href)) {
       let email = window.localStorage.getItem('emailForSignIn');
-      const storedPortal = window.localStorage.getItem('portalForSignIn') || 'user';
-      setPortal(storedPortal);
-
       if (!email) {
         email = window.prompt('Please provide your email for confirmation');
       }
@@ -33,17 +29,15 @@ const Login = () => {
         signInWithEmailLink(auth, email, window.location.href)
           .then((result) => {
             window.localStorage.removeItem('emailForSignIn');
-            window.localStorage.removeItem('portalForSignIn');
             
             const authedEmail = (result?.user?.email || '').toLowerCase();
-            if (storedPortal === 'admin' && authedEmail !== ADMIN_EMAIL) {
-              toast.error('You are not authorized for the Admin portal.');
-              navigate('/');
+            if (authedEmail === ADMIN_EMAIL) {
+              navigate('/admin');
             } else {
-              const returnUrl = storedPortal === 'admin' ? '/admin' : (location.state?.from || '/');
+              const returnUrl = location.state?.from || '/';
               navigate(returnUrl);
-              toast.success('Successfully signed in!');
             }
+            toast.success('Successfully signed in!');
           })
           .catch((error) => {
             console.error('Sign-in error', error);
@@ -54,15 +48,16 @@ const Login = () => {
   }, [navigate, location]);
 
   const handleGoogleSignIn = async () => {
-    if (portal === 'admin') {
-      toast.error('Admin portal does not support Google sign-in.');
-      return;
-    }
     setIsLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      const returnUrl = location.state?.from || '/';
-      navigate(returnUrl);
+      const result = await signInWithPopup(auth, googleProvider);
+      const authedEmail = (result?.user?.email || '').toLowerCase();
+      if (authedEmail === ADMIN_EMAIL) {
+        navigate('/admin');
+      } else {
+        const returnUrl = location.state?.from || '/';
+        navigate(returnUrl);
+      }
       toast.success('Signed in with Google!');
     } catch (error) {
       console.error('Google sign-in error:', error);
@@ -79,17 +74,17 @@ const Login = () => {
       return;
     }
     const normalizedEmail = email.trim().toLowerCase();
-    if (portal === 'admin' && normalizedEmail !== ADMIN_EMAIL) {
-      toast.error('Invalid admin email.');
-      return;
-    }
 
     setIsLoading(true);
     try {
       await sendSignInLinkToEmail(auth, normalizedEmail, actionCodeSettings);
       window.localStorage.setItem('emailForSignIn', normalizedEmail);
-      window.localStorage.setItem('portalForSignIn', portal);
-      toast.success(`A sign-in link has been sent to ${email}.`);
+      toast.success(
+        <div className='flex items-center'>
+          <FaPaperPlane className='mr-2' />
+          <span>A sign-in link has been sent to {email}.</span>
+        </div>
+      );
       setEmail('');
     } catch (error) {
       console.error('Email link error:', error);
@@ -100,102 +95,80 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">
-            <Link to="/" className="text-indigo-600 hover:text-indigo-700">LATHI</Link>
-          </h1>
-          <h2 className="mt-4 text-2xl sm:text-3xl font-extrabold text-gray-900">
-            Access Your Account
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 m-4">
+        <div className="text-center mb-8">
+        <Link to="/">
+          <img src="/assets/Logo.png" alt="LATHI Logo" className="mx-auto h-12 w-auto"/>
+        </Link>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            Welcome Back
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Secure and easy sign-in for users and admins.
+            Sign in to continue to LATHI
           </p>
         </div>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="py-8 px-4 shadow-md sm:rounded-lg sm:px-10">
-          <div className="mb-6">
-              <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-                <button
-                  onClick={() => setPortal('user')}
-                  className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${portal === 'user' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-                >
-                  User Portal
-                </button>
-                <button
-                  onClick={() => setPortal('admin')}
-                  className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${portal === 'admin' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-                >
-                  Admin Portal
-                </button>
+        <form className="space-y-6" onSubmit={handleEmailLinkSignIn}>
+          <div>
+            <label htmlFor="email" className="sr-only">Email address</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaEnvelope className="h-5 w-5 text-gray-400" />
               </div>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md p-3"
+                placeholder="you@example.com"
+              />
             </div>
-            <form className="space-y-6" onSubmit={handleEmailLinkSignIn}>
-              <div>
-                <label htmlFor="email" className="sr-only">Email address</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaEnvelope className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                    placeholder="Enter your email address"
-                  />
-                </div>
-              </div>
+          </div>
 
-              <div>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full btn-primary py-3 px-4 disabled:opacity-60"
-                >
-                  {isLoading ? 'Sending Link...' : 'Continue with Email'}
-                </button>
-              </div>
-            </form>
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition duration-150 ease-in-out"
+            >
+              {isLoading ? 'Sending Link...' : 'Continue with Email'}
+            </button>
+          </div>
+        </form>
 
-            {portal === 'user' && (
-              <>
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 text-gray-500">Or</span>
-                  </div>
-                </div>
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
 
-                <div>
-                  <button
-                    onClick={handleGoogleSignIn}
-                    disabled={isLoading}
-                    className="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-                  >
-                    <FcGoogle className="h-5 w-5 mr-3" />
-                    {isLoading ? 'Please wait...' : 'Sign in with Google'}
-                  </button>
-                </div>
-              </>
-            )}
+          <div className="mt-6">
+            <button
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+              className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition duration-150 ease-in-out"
+            >
+              <FcGoogle className="h-5 w-5 mr-3" />
+              Sign in with Google
+            </button>
+          </div>
         </div>
-        
-        <div className="mt-6 text-center text-xs text-gray-600">
+
+        <div className="mt-6 text-center text-xs text-gray-500">
           <p>
-            By signing in, you agree to our {' '}
+            By signing in, you agree to our{' '}
             <Link to="/terms" className="font-medium text-indigo-600 hover:underline">Terms of Service</Link>
-            {' '}&{' '}
+            {' and '}
             <Link to="/privacy" className="font-medium text-indigo-600 hover:underline">Privacy Policy</Link>.
           </p>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck, FiMinus, FiPlus, FiEdit2, FiSave, FiX, FiTrash2 } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { handleImageError } from '../utils/imageUtils';
@@ -22,6 +22,7 @@ const Details = () => {
   
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
   const { addToCart, getCartCount } = useCart();
   const auth = getAuth();
 
@@ -84,6 +85,12 @@ const Details = () => {
   };
 
   const handleAddToCart = () => {
+    const user = auth.currentUser;
+    if (!user) {
+      toast.info('Please log in to add items to your cart.');
+      navigate('/login', { state: { from: location } });
+      return;
+    }
     if (!product || !selectedSize) {
       toast.warn('Please select a size.');
       return;
@@ -101,6 +108,12 @@ const Details = () => {
   };
 
   const handleBuyNow = () => {
+    const user = auth.currentUser;
+    if (!user) {
+      toast.info('Please log in to buy an item.');
+      navigate('/login', { state: { from: location } });
+      return;
+    }
     if (!product || !selectedSize) {
       toast.warn('Please select a size.');
       return;
