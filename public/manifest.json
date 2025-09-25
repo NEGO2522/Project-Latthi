@@ -1,3 +1,4 @@
+
       {
         "name": "Lathi",
         "short_name": "Lathi",
@@ -11,8 +12,5 @@
            "type": "image/svg+xml",
            "sizes": "any"
          }
-       ],
-       "serviceworker": {
-         "src": "sw.js"
-       }
+       ]
      }

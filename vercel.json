@@ -1,19 +1,14 @@
+
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
+  "headers": [
     {
       "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "headers": [
+        {
+          "key": "Access-Control-Expose-Headers",
+          "value": "x-rtb-fingerprint-id"
+        }
+      ]
     }
   ]
 }
