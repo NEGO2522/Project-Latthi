@@ -1,6 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiShoppingCart, FiMenu, FiLoader, FiFilter } from 'react-icons/fi';
+import { FiShoppingCart, FiMenu, FiLoader, FiFilter, FiX } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { useState, useEffect, useMemo } from 'react';
 import { handleImageError } from '../utils/imageUtils';
@@ -11,6 +11,7 @@ const Items = () => {
   const navigate = useNavigate();
   const { getCartCount } = useCart();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +65,10 @@ const Items = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   const filteredItems = useMemo(() =>
     selectedCategory === 'All'
       ? items
@@ -82,6 +87,9 @@ const Items = () => {
             key={category}
             onClick={() => {
               setSelectedCategory(category);
+              if (isMobileView) {
+                toggleMenu();
+              }
             }}
             className={`w-full text-left p-3 rounded-lg transition-all duration-200 flex justify-between items-center text-sm font-medium ${selectedCategory === category ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-indigo-50 text-gray-700'}`}>
             <span>{category}</span>
@@ -115,24 +123,25 @@ const Items = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <AnimatePresence>
-        {isMobile && (
+        {isMenuOpen && isMobile && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-40"
-            onClick={() => {}}
+            className="fixed inset-0 bg-blur bg-opacity-50 backdrop-blur-sm z-40"
+            onClick={toggleMenu}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {isMobile && (
+        {isMenuOpen && isMobile && (
           <div
             className="fixed top-0 left-0 h-full w-72 bg-gray-50 shadow-2xl z-50 overflow-y-auto"
           >
-            <div className="p-4 border-b">
+            <div className="p-4 border-b flex justify-between items-center">
               <Link to="/cart" className="flex items-center p-3 font-bold text-lg">
                 <FiShoppingCart className="mr-3" /> Cart
                 {getCartCount() > 0 && <span className="ml-auto bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">{getCartCount()}</span>}
               </Link>
+              <button onClick={toggleMenu} className="p-2 rounded-lg bg-white shadow-sm" aria-label="Close menu"><FiX className="text-gray-800"/></button>
             </div>
             <CategorySidebar isMobileView={true} />
           </div>
@@ -141,7 +150,7 @@ const Items = () => {
 
       <div className="max-w-screen-2xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
         <header className="flex justify-between items-center mb-6 sm:mb-8 md:hidden">
-          <button onClick={() => {}} className="p-2 rounded-lg bg-white shadow-sm" aria-label="Open menu"><FiMenu className="text-gray-800"/></button>
+          <button onClick={toggleMenu} className="p-2 rounded-lg bg-white shadow-sm" aria-label="Open menu"><FiMenu className="text-gray-800"/></button>
           <h1 className="text-xl font-bold text-gray-800">Our Collection</h1>
           <Link to="/cart" className="relative p-2 rounded-lg bg-white shadow-sm">
             <FiShoppingCart className="text-gray-800"/>
