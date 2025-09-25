@@ -43,12 +43,15 @@ const Message = ({ message }) => {
 
 const Layout = ({ children, user, isAdmin }) => {
   const { message } = useCart();
+  const location = useLocation();
+  const showNav = location.pathname !== '/items';
+
   return (
     <>
       <Message message={message} />
-      <TopLine />
-      <Navbar user={user} isAdmin={isAdmin} />
-      <main className="pt-5">{children}</main>
+      {showNav && <TopLine />}
+      {showNav && <Navbar user={user} isAdmin={isAdmin} />}
+      <main className={showNav ? 'pt-5' : ''}>{children}</main>
     </>
   );
 };

@@ -12,6 +12,13 @@ const images = [
   '/assets/im2.jpg',
 ];
 
+const categories = [
+  { name: "One piece", image: "/assets/One_Piece.jpg" },
+  { name: "Two piece", image: "/assets/Two_Piece.jpg" },
+  { name: "Three piece", image: "/assets/Three_Piece.jpg" },
+  { name: "Short Kurti", image: "/assets/Top_ShortKurti.jpg" },
+];
+
 const Home = () => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -73,18 +80,21 @@ const Home = () => {
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
           <div className="relative w-full h-96 overflow-hidden rounded-xl md:rounded-2xl">
-            <AnimatePresence>
-              <motion.img
-                key={currentImageIndex}
-                src={images[currentImageIndex]}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.5, ease: 'easeInOut' }}
-                className="absolute w-full h-full object-contain"
-                alt="Promotional images"
-              />
-            </AnimatePresence>
+            <Link to="/items">
+              <AnimatePresence>
+                <motion.img
+                  key={currentImageIndex}
+                  src={images[currentImageIndex]}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 1.5, ease: 'easeInOut' }}
+                  className="absolute w-full h-full object-contain cursor-pointer"
+                  alt="Promotional images"
+                />
+              </AnimatePresence>
+            </Link>
           </div>
           
           <div 
@@ -173,6 +183,27 @@ const Home = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-12">
+        <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Shop by Category</h2>
+            <div className="w-20 h-1 bg-indigo-600 mx-auto"></div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {categories.map((category) => (
+            <Link to="/items" key={category.name} className="group">
+                <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-xl">
+                    <div className="h-56 overflow-hidden">
+                        <img src={category.image} alt={category.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"/>
+                    </div>
+                    <div className="p-4 bg-gray-50">
+                        <h3 className="font-bold text-center text-gray-800 group-hover:text-indigo-600 transition-colors">{category.name}</h3>
+                    </div>
+                </div>
+            </Link>
+          ))}
         </div>
       </div>
 
