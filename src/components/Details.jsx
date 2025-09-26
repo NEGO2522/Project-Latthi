@@ -12,6 +12,7 @@ const Details = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -35,6 +36,7 @@ const Details = () => {
           const data = snapshot.val();
           setProduct(data);
           setSelectedSize(data.sizes?.[0] || '');
+          setSelectedColor(data.colors?.[0] || '');
           setEditData(data);
         } else {
           toast.error('Product not found!');
@@ -91,14 +93,14 @@ const Details = () => {
       navigate('/login', { state: { from: location } });
       return;
     }
-    if (!product || !selectedSize) {
-      toast.warn('Please select a size.');
+    if (!product || !selectedSize || (product.colors && product.colors.length > 0 && !selectedColor)) {
+      toast.warn('Please select a size and color.');
       return;
     }
     setIsAdding(true);
     try {
-      addToCart({ id, name: product.name, price: product.price, image: product.images[0] }, selectedSize, quantity);
-      toast.success(`${quantity} x ${product.name} (Size: ${selectedSize}) added to cart!`);
+      addToCart({ id, name: product.name, price: product.price, image: product.images[0], color: selectedColor }, selectedSize, quantity);
+      toast.success(`${quantity} x ${product.name} (Size: ${selectedSize}, Color: ${selectedColor}) added to cart!`);
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast.error('Failed to add to cart');
@@ -114,11 +116,11 @@ const Details = () => {
       navigate('/login', { state: { from: location } });
       return;
     }
-    if (!product || !selectedSize) {
-      toast.warn('Please select a size.');
+    if (!product || !selectedSize || (product.colors && product.colors.length > 0 && !selectedColor)) {
+      toast.warn('Please select a size and color.');
       return;
     }
-    const itemToPurchase = { ...product, id, size: selectedSize, quantity };
+    const itemToPurchase = { ...product, id, size: selectedSize, color: selectedColor, quantity };
     navigate('/adress', { state: { item: itemToPurchase } });
   };
 
@@ -191,6 +193,19 @@ const Details = () => {
                           ))}
                       </div>
                   </div>
+
+                  {product.colors && product.colors.length > 0 && (
+                    <div>
+                        <h3 className="text-sm font-medium text-gray-900 mb-2">Select Color</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {product.colors.map(color => (
+                                <button key={color} onClick={() => setSelectedColor(color)} className={`px-4 py-2 text-sm border rounded-md ${selectedColor === color ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}>
+                                    {color}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                  )}
 
                   <div>
                     <h3 className="text-sm font-medium text-gray-900 mb-2">Quantity</h3>

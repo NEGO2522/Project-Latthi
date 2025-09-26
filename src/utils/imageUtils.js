@@ -1,15 +1,16 @@
-// A simple package/box icon as a base64 SVG
 export const getFallbackImage = (text = '') => {
-  // If text is provided, create a simple text-based fallback
   if (text) {
-    return `data:image/svg+xml;base64,${btoa(
-      `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    const svg = `<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <rect width="100%" height="100%" fill="#f3f4f6" />
         <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" dominant-baseline="middle" fill="#9ca8de">
           ${text.substring(0, 15)}${text.length > 15 ? '...' : ''}
         </text>
-      </svg>`
-    )}`;
+      </svg>`;
+    
+    // Encode the SVG string to be compatible with btoa
+    const encodedSvg = btoa(unescape(encodeURIComponent(svg)));
+    
+    return `data:image/svg+xml;base64,${encodedSvg}`;
   }
   
   // Default package/box icon

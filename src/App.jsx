@@ -103,7 +103,7 @@ function App() {
               <Route path="/login" element={<LoginRoute />} />
               <Route path="/" element={<Home user={user} isAdmin={isAdmin} />} />
               <Route path="/shop" element={<Shop />} />
-              <Route path="/items" element={<Items />} />
+              <Route path="/items" element={<Items user={user} isAdmin={isAdmin}/>} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<ContactUs />} />
               <Route path="/details/:id" element={<Details />} />

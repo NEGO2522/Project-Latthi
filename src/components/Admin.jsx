@@ -6,16 +6,17 @@ import { toast } from 'react-toastify';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { FiBox, FiPlus, FiEdit, FiTrash2, FiHome, FiUsers, FiClipboard, FiMessageSquare, FiMenu, FiX } from 'react-icons/fi';
-import { AVAILABLE_SIZES, CATEGORIES } from '../constants';
+import { AVAILABLE_SIZES, CATEGORIES, AVAILABLE_COLORS } from '../constants';
 
 const Admin = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
     description: '',
     fabric: '',
-    color: '',
+    colors: [],
     category: 'one-piece',
     sizes: [],
     images: [''],
@@ -30,6 +31,7 @@ const Admin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    setIsMounted(true);
     const user = auth.currentUser;
     const adminEmail = user?.email?.toLowerCase();
     const isAdminUser = adminEmail?.endsWith('@admin.com') || adminEmail === 'cottonfab0001@gmail.com';
@@ -50,7 +52,7 @@ const Admin = () => {
         price: product.price || '',
         description: product.description || '',
         fabric: product.fabric || '',
-        color: product.color || '',
+        colors: Array.isArray(product.colors) ? [...product.colors] : (product.color ? [product.color] : []),
         category: product.category || 'one-piece',
         sizes: Array.isArray(product.sizes) ? [...product.sizes] : [],
         images: product.images && product.images.length > 0 ? [...product.images] : [''],
@@ -105,6 +107,14 @@ const Admin = () => {
       : [...formData.sizes, value];
     setFormData(prev => ({ ...prev, sizes: newSizes }));
   };
+  
+  const handleColorsChange = (e) => {
+    const { value } = e.target;
+    let newColors = formData.colors.includes(value)
+      ? formData.colors.filter(color => color !== value)
+      : [...formData.colors, value];
+    setFormData(prev => ({ ...prev, colors: newColors }));
+  };
 
   const handleDelete = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
@@ -121,7 +131,7 @@ const Admin = () => {
 
   const resetForm = () => {
     setFormData({
-      name: '', price: '', description: '', fabric: '', color: '', category: 'one-piece',
+      name: '', price: '', description: '', fabric: '', colors: [], category: 'one-piece',
       sizes: [], images: [''], features: [''], careInstructions: ['']
     });
     setEditingId(null);
@@ -130,7 +140,7 @@ const Admin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const requiredFields = ['name', 'price', 'description', 'fabric', 'color', 'category'];
+    const requiredFields = ['name', 'price', 'description', 'fabric', 'category'];
     if (requiredFields.some(field => !formData[field])) {
       toast.error('Please fill in all required fields');
       return;
@@ -141,6 +151,11 @@ const Admin = () => {
       return;
     }
     
+    if (!formData.colors.length) {
+        toast.error('Please select at least one color');
+        return;
+    }
+
     const validImages = formData.images.filter(img => img.trim() !== '');
     if (validImages.length === 0) {
       toast.error('Please add at least one image URL');
@@ -189,7 +204,7 @@ const Admin = () => {
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-blur bg-opacity-10 z-20 lg:hidden"
+          className="fixed inset-0 bgzz-blur bg-opacity-30 backdrop-blur-sm z-20 lg:hidden transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
@@ -216,12 +231,8 @@ const Admin = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-4 sm:p-6 lg:p-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-gray-600 mt-1 text-sm md:text-base">Manage your products, orders, and subscribers.</p>
-            </div>
+        <div className="max-w-full mx-auto">
+          <div className="mb-8 flex items-center justify-end">
             <button 
                 onClick={() => setIsSidebarOpen(true)}
                 className="p-2 text-gray-600 hover:text-gray-800 rounded-md lg:hidden"
@@ -230,126 +241,179 @@ const Admin = () => {
             </button>
           </div>
 
-          <div className="bg-white p-4 sm:p-8 rounded-2xl shadow-lg mb-10">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-              {editingId ? <FiEdit className="mr-3 text-indigo-600" /> : <FiPlus className="mr-3 text-indigo-600" />}
-              {editingId ? 'Edit Product' : 'Add a New Product'}
-            </h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                    <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full input-field" required />
-                  </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
-                      <input type="text" name="price" value={formData.price} onChange={handleInputChange} className="w-full input-field" placeholder="e.g., 799" required />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                      <input type="text" name="color" value={formData.color} onChange={handleInputChange} className="w-full input-field" required />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                    <select name="category" value={formData.category} onChange={handleInputChange} className="w-full input-field" required>
-                      {CATEGORIES.map(cat => (
-                        <option key={cat.value} value={cat.value}>{cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea name="description" value={formData.description} onChange={handleInputChange} rows={3} className="w-full input-field" required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fabric</label>
-                    <input type="text" name="fabric" value={formData.fabric} onChange={handleInputChange} className="w-full input-field" required />
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Available Sizes</label>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {AVAILABLE_SIZES.map((size) => (
-                        <label key={size} className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer text-sm">
-                          <input type="checkbox" value={size} checked={formData.sizes.includes(size)} onChange={handleSizesChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"/>
-                          <span>{size}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {['images', 'features', 'careInstructions'].map(field => (
-                    <div key={field}>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">{field.replace(/([A-Z])/g, ' $1')}</label>
-                      {formData[field].map((value, index) => (
-                        <div key={index} className="flex items-center space-x-2 mb-2">
-                          <input
-                            type={field === 'images' ? 'url' : 'text'}
-                            value={value}
-                            onChange={(e) => handleArrayInputChange(e, field, index)}
-                            className="flex-1 input-field"
-                            placeholder={field === 'images' ? `https://example.com/image.jpg` : `Enter ${field.slice(0, -1)}`}
-                            required={index === 0 && field === 'images'}
-                          />
-                          {formData[field].length > 1 && (
-                            <button type="button" onClick={() => removeArrayField(field, index)} className="p-2 text-red-500 hover:text-red-700">
-                              <FiTrash2 />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      <button type="button" onClick={() => addArrayField(field)} className="mt-1 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                        + Add {field.slice(0, -1)}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          <div className="flex flex-col lg:flex-row lg:space-x-10">
+            <div className={`lg:w-1/2 bg-white p-4 sm:p-8 rounded-2xl shadow-lg mb-10 lg:mb-0 transition-all duration-700 ease-in-out ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                {editingId ? <FiEdit className="mr-3 text-indigo-600" /> : <FiPlus className="mr-3 text-indigo-600" />}
+                {editingId ? 'Edit Product' : 'Add a New Product'}
+              </h2>
               
-              <div className="pt-4 flex flex-wrap items-center justify-end gap-3">
-                {editingId && (
-                  <button type="button" onClick={resetForm} className="btn-secondary py-2 px-4">
-                      Cancel Edit
-                  </button>
-                )}
-                <button type="submit" disabled={isSubmitting} className={`btn-primary py-2 px-6 ${isSubmitting ? 'opacity-50' : ''}`}>
-                  {isSubmitting ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update Product' : 'Add Product')}
-                </button>
-              </div>
-            </form>
-          </div>
-          
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Existing Products ({Object.keys(products).length})</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Object.entries(products).reverse().map(([id, product]) => (
-                <div key={id} className="bg-white rounded-xl shadow-md overflow-hidden transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl group">
-                  <div className="h-56 overflow-hidden">
-                    <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src={product.images[0]} alt={product.name} />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg text-gray-800 truncate">{product.name}</h3>
-                    <div className="flex items-center justify-between mt-2">
-                        <p className="text-indigo-600 font-bold text-xl">₹{product.price}</p>
-                        <p className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">{product.color}</p>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                      <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full input-field" required />
                     </div>
-                    <div className="mt-4 flex gap-2">
-                      <button onClick={() => handleEdit(id)} className="flex-1 btn-secondary text-sm py-2">
-                        <FiEdit className="mr-2 h-4 w-4" /> Edit
-                      </button>
-                      <button onClick={() => handleDelete(id)} className="flex-1 btn-danger text-sm py-2">
-                        <FiTrash2 className="mr-2 h-4 w-4" /> Delete
-                      </button>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                        <input type="text" name="price" value={formData.price} onChange={handleInputChange} className="w-full input-field" placeholder="e.g., 799" required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Fabric</label>
+                        <input type="text" name="fabric" value={formData.fabric} onChange={handleInputChange} className="w-full input-field" required />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                      <select name="category" value={formData.category} onChange={handleInputChange} className="w-full input-field" required>
+                        {CATEGORIES.map(cat => (
+                          <option key={cat.value} value={cat.value}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <textarea name="description" value={formData.description} onChange={handleInputChange} rows={3} className="w-full input-field" required />
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                      <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Available Colors</label>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {AVAILABLE_COLORS.map((color) => (
+                              <label key={color} className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer text-sm">
+                              <input type="checkbox" value={color} checked={formData.colors.includes(color)} onChange={handleColorsChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"/>
+                              <span>{color}</span>
+                              </label>
+                          ))}
+                          </div>
+                      </div>
+                      <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Available Sizes</label>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                          {AVAILABLE_SIZES.map((size) => (
+                              <label key={size} className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer text-sm">
+                              <input type="checkbox" value={size} checked={formData.sizes.includes(size)} onChange={handleSizesChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"/>
+                              <span>{size}</span>
+                              </label>
+                          ))}
+                          </div>
+                      </div>
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">Images</label>
+                        {formData.images.map((value, index) => (
+                          <div key={index} className="flex items-center space-x-2 mb-2">
+                            <input
+                              type='url'
+                              value={value}
+                              onChange={(e) => handleArrayInputChange(e, 'images', index)}
+                              className="flex-1 input-field"
+                              placeholder={`https://example.com/image.jpg`}
+                              required={index === 0}
+                            />
+                            {formData.images.length > 1 && (
+                              <button type="button" onClick={() => removeArrayField('images', index)} className="p-2 text-red-500 hover:text-red-700">
+                                <FiTrash2 />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => addArrayField('images')} className="mt-1 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                          + Add image
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+                        {formData.features.map((value, index) => (
+                          <div key={index} className="flex items-center space-x-2 mb-2">
+                            <input
+                              type="text"
+                              value={value}
+                              onChange={(e) => handleArrayInputChange(e, 'features', index)}
+                              className="flex-1 input-field"
+                              placeholder="Enter feature"
+                            />
+                            {formData.features.length > 1 && (
+                              <button type="button" onClick={() => removeArrayField('features', index)} className="p-2 text-red-500 hover:text-red-700">
+                                <FiTrash2 />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => addArrayField('features')} className="mt-1 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                          + Add feature
+                        </button>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Care Instructions</label>
+                        {formData.careInstructions.map((value, index) => (
+                          <div key={index} className="flex items-center space-x-2 mb-2">
+                            <input
+                              type="text"
+                              value={value}
+                              onChange={(e) => handleArrayInputChange(e, 'careInstructions', index)}
+                              className="flex-1 input-field"
+                              placeholder="Enter care instruction"
+                            />
+                            {formData.careInstructions.length > 1 && (
+                              <button type="button" onClick={() => removeArrayField('careInstructions', index)} className="p-2 text-red-500 hover:text-red-700">
+                                <FiTrash2 />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => addArrayField('careInstructions')} className="mt-1 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                          + Add instruction
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
+                
+                <div className="pt-4 flex flex-wrap items-center justify-end gap-3">
+                  {editingId && (
+                    <button type="button" onClick={resetForm} className="btn-secondary py-2 px-4">
+                        Cancel Edit
+                    </button>
+                  )}
+                  <button type="submit" disabled={isSubmitting} className={`btn-primary py-2 px-6 ${isSubmitting ? 'opacity-50' : ''}`}>
+                    {isSubmitting ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update Product' : 'Add Product')}
+                  </button>
+                </div>
+              </form>
+            </div>
+            
+            <div className={`lg:w-1/2 transition-all duration-700 ease-in-out delay-200 ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Existing Products ({Object.keys(products).length})</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {Object.entries(products).reverse().map(([id, product]) => (
+                  <div key={id} className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl group">
+                    <div className="h-56 overflow-hidden">
+                      <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src={product.images[0]} alt={product.name} />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-lg text-gray-800 truncate">{product.name}</h3>
+                      <div className="flex items-center justify-between mt-2">
+                          <p className="text-indigo-600 font-bold text-xl">₹{product.price}</p>
+                          <p className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">{product.colors && Array.isArray(product.colors) ? product.colors.join(', ') : product.color || ''}</p>
+                      </div>
+                      <div className="mt-4 flex gap-2">
+                        <button onClick={() => handleEdit(id)} className="flex-1 btn-secondary text-sm py-2">
+                          <FiEdit className="mr-2 h-4 w-4" /> Edit
+                        </button>
+                        <button onClick={() => handleDelete(id)} className="flex-1 btn-danger text-sm py-2">
+                          <FiTrash2 className="mr-2 h-4 w-4" /> Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
