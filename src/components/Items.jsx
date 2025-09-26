@@ -1,4 +1,4 @@
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { FiShoppingCart, FiMenu, FiLoader, FiFilter, FiX } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
@@ -129,7 +129,11 @@ const Items = ({ user, isAdmin }) => {
 
       <AnimatePresence>
         {isMenuOpen && isMobile && (
-          <div
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-blur bg-opacity-50 backdrop-blur-sm z-40"
             onClick={toggleMenu}
           />
@@ -138,7 +142,11 @@ const Items = ({ user, isAdmin }) => {
 
       <AnimatePresence>
         {isMenuOpen && isMobile && (
-          <div
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
             className="fixed top-0 left-0 h-full w-72 bg-gray-50 shadow-2xl z-50 overflow-y-auto"
           >
             <div className="p-4 border-b flex justify-between items-center">
@@ -149,7 +157,7 @@ const Items = ({ user, isAdmin }) => {
               <button onClick={toggleMenu} className="p-2 rounded-lg bg-white shadow-sm" aria-label="Close menu"><FiX className="text-gray-800"/></button>
             </div>
             <CategorySidebar isMobileView={true} />
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
