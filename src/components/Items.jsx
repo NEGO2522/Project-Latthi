@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FiShoppingCart, FiMenu, FiLoader, FiFilter, FiX } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { useState, useEffect, useMemo } from 'react';
-import { handleImageError } from '../utils/imageUtils';
+import { handleImageError, convertGoogleDriveLink } from '../utils/imageUtils';
 import { ref, onValue } from 'firebase/database';
 import { database } from '../firebase/firebase';
 import TopLine from './TopLine'; // Import TopLine
@@ -189,7 +189,7 @@ const Items = ({ user, isAdmin }) => {
                       className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col cursor-pointer"
                     >
                       <div className="h-56 w-full overflow-hidden">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => handleImageError(e, item.name)} />
+                        <img src={convertGoogleDriveLink(item.image)} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => handleImageError(e, item.name)} />
                       </div>
                       <div className="p-4 flex-grow flex flex-col">
                         <h2 className="text-md font-bold text-gray-800 line-clamp-1 flex-grow pr-2 mb-2">{item.name}</h2>

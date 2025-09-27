@@ -7,6 +7,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { FiBox, FiPlus, FiEdit, FiTrash2, FiHome, FiUsers, FiClipboard, FiMessageSquare, FiMenu, FiX } from 'react-icons/fi';
 import { AVAILABLE_SIZES, CATEGORIES, AVAILABLE_COLORS } from '../constants';
+import { convertGoogleDriveLink } from '../utils/imageUtils';
 
 const Admin = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -204,7 +205,7 @@ const Admin = () => {
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bgzz-blur bg-opacity-30 backdrop-blur-sm z-20 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-20 lg:hidden transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
@@ -394,7 +395,7 @@ const Admin = () => {
                 {Object.entries(products).reverse().map(([id, product]) => (
                   <div key={id} className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl group">
                     <div className="h-56 overflow-hidden">
-                      <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src={product.images[0]} alt={product.name} />
+                      <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src={convertGoogleDriveLink(product.images[0])} alt={product.name} />
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold text-lg text-gray-800 truncate">{product.name}</h3>

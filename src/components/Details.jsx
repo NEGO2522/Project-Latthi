@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck, FiMinus, FiPlus, FiEdit2, FiSave, FiX, FiTrash2 } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
-import { handleImageError } from '../utils/imageUtils';
+import { handleImageError, convertGoogleDriveLink } from '../utils/imageUtils';
 import { toast } from 'react-toastify';
 import { getAuth } from 'firebase/auth';
 import { ref, update, get } from 'firebase/database';
@@ -158,12 +158,12 @@ const Details = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 p-4 sm:p-6">
             <div className="space-y-4">
               <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-100">
-                <img src={editData.images?.[selectedImageIndex] || ''} alt={editData.name} className="h-full w-full object-cover object-center" onError={handleImageError} />
+                <img src={convertGoogleDriveLink(editData.images?.[selectedImageIndex] || '')} alt={editData.name} className="h-full w-full object-cover object-center" onError={handleImageError} />
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {editData.images?.map((image, index) => (
                   <button key={index} type="button" onClick={() => setSelectedImageIndex(index)} className={`block overflow-hidden rounded-lg border ${selectedImageIndex === index ? 'ring-2 ring-indigo-500' : 'border-gray-200'}`}>
-                    <img src={image} alt={`${editData.name} ${index + 1}`} className="h-20 w-full object-cover" onError={handleImageError} />
+                    <img src={convertGoogleDriveLink(image)} alt={`${editData.name} ${index + 1}`} className="h-20 w-full object-cover" onError={handleImageError} />
                   </button>
                 ))}
               </div>
