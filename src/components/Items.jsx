@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { FiShoppingCart, FiMenu, FiLoader, FiFilter, FiX } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { useState, useEffect, useMemo } from 'react';
@@ -8,9 +8,11 @@ import { ref, onValue } from 'firebase/database';
 import { database } from '../firebase/firebase';
 import TopLine from './TopLine'; // Import TopLine
 import Navbar from './Navbar';   // Import Navbar
+import { CATEGORIES } from '../constants'; // Import CATEGORIES
 
 const Items = ({ user, isAdmin }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { getCartCount } = useCart();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,9 +20,18 @@ const Items = ({ user, isAdmin }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  
+  const getCategoryFromURL = () => {
+    const params = new URLSearchParams(location.search);
+    return params.get('category') || 'All';
+  }
 
-  const definedCategories = useMemo(() => ["One piece", "Two piece", "Three piece", "short kurti"], []);
+  const [selectedCategory, setSelectedCategory] = useState(getCategoryFromURL());
+
+  useEffect(() => {
+    setSelectedCategory(getCategoryFromURL());
+  }, [location.search]);
+
 
   useEffect(() => {
     const fetchProducts = () => {
@@ -49,17 +60,17 @@ const Items = ({ user, isAdmin }) => {
     fetchProducts();
   }, []);
 
-  const { categories, categoryCounts } = useMemo(() => {
+  const { categoriesWithAll, categoryCounts } = useMemo(() => {
     const counts = {};
-    definedCategories.forEach(cat => {
-        counts[cat] = items.filter(item => item.category === cat).length;
+    CATEGORIES.forEach(cat => {
+        counts[cat.value] = items.filter(item => item.category === cat.value).length;
     });
 
     return {
-      categories: ['All', ...definedCategories],
+      categoriesWithAll: [{ name: 'All', value: 'All' }, ...CATEGORIES],
       categoryCounts: { 'All': items.length, ...counts },
     };
-  }, [items, definedCategories]);
+  }, [items]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -84,19 +95,19 @@ const Items = ({ user, isAdmin }) => {
         Categories
       </h2>
       <nav className="space-y-2">
-        {categories.map(category => (
+        {categoriesWithAll.map(category => (
           <button 
-            key={category}
+            key={category.value}
             onClick={() => {
-              setSelectedCategory(category);
+              setSelectedCategory(category.value);
               if (isMobileView) {
                 toggleMenu();
               }
             }}
-            className={`w-full text-left p-3 rounded-lg transition-all duration-200 flex justify-between items-center text-sm font-medium ${selectedCategory === category ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-indigo-50 text-gray-700'}`}>
-            <span>{category}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${selectedCategory === category ? 'bg-white text-indigo-700' : 'bg-gray-200 text-gray-600'}`}>
-              {categoryCounts[category] || 0}
+            className={`w-full text-left p-3 rounded-lg transition-all duration-200 flex justify-between items-center text-sm font-medium ${selectedCategory === category.value ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-indigo-50 text-gray-700'}`}>
+            <span>{category.name}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${selectedCategory === category.value ? 'bg-white text-indigo-700' : 'bg-gray-200 text-gray-600'}`}>
+              {categoryCounts[category.value] || 0}
             </span>
           </button>
         ))}
@@ -120,6 +131,12 @@ const Items = ({ user, isAdmin }) => {
         <button onClick={() => window.location.reload()} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Retry</button>
       </div>
     );
+  }
+
+  const getCategoryName = (value) => {
+    if (value === 'All') return 'All';
+    const category = CATEGORIES.find(cat => cat.value === value);
+    return category ? category.name : 'Unknown';
   }
 
   return (
@@ -206,7 +223,7 @@ const Items = ({ user, isAdmin }) => {
               ) : (
                 <div className="text-center py-20">
                   <p className="text-gray-600 text-xl font-semibold">No Products Found</p>
-                  <p className="text-gray-500 mt-2">There are no products available in the "{selectedCategory}" category.</p>
+                  <p className="text-gray-500 mt-2">There are no products available in the "{getCategoryName(selectedCategory)}" category.</p>
                 </div>
               )}
             </AnimatePresence>

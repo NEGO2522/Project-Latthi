@@ -4,19 +4,13 @@ import { database, ref, push, get } from '../firebase/firebase';
 import { toast } from 'react-toastify';
 import Footer from './Footer';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CATEGORIES } from '../constants';
 
 const images = [
   '/assets/Home.png',
   '/assets/im.jpg',
   '/assets/im1.jpg',
   '/assets/im2.jpg',
-];
-
-const categories = [
-  { name: "One piece", image: "/assets/One_Piece.jpg" },
-  { name: "Two piece", image: "/assets/Two_Piece.jpg" },
-  { name: "Three piece", image: "/assets/Three_Piece.jpg" },
-  { name: "Short Kurti", image: "/assets/Top_ShortKurti.jpg" },
 ];
 
 const Home = () => {
@@ -72,6 +66,12 @@ const Home = () => {
       });
     }
   };
+  const categories = [
+    { name: "One piece", value: "one-piece", image: "/assets/One_Piece.jpg" },
+    { name: "Two piece", value: "two-piece", image: "/assets/Two_Piece.jpg" },
+    { name: "Three piece", value: "three-piece", image: "/assets/Three_Piece.jpg" },
+    { name: "Short Kurti", value: "short-kurti", image: "/assets/Top_ShortKurti.jpg" },
+  ];
 
   return (
     <div className="min-h-screen bg-white">
@@ -192,19 +192,19 @@ const Home = () => {
             <div className="w-20 h-1 bg-indigo-600 mx-auto"></div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {categories.map((category) => (
-            <Link to="/items" key={category.name} className="group">
-                <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-xl">
-                    <div className="h-56 overflow-hidden">
-                        <img src={category.image} alt={category.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"/>
-                    </div>
-                    <div className="p-4 bg-gray-50">
-                        <h3 className="font-bold text-center text-gray-800 group-hover:text-indigo-600 transition-colors">{category.name}</h3>
-                    </div>
-                </div>
-            </Link>
-          ))}
-        </div>
+        {categories.map((category) => (
+          <Link to={`/items?category=${category.value}`} key={category.name} className="group">
+              <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-xl">
+                  <div className="h-56 overflow-hidden">
+                      <img src={category.image} alt={category.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"/>
+                  </div>
+                  <div className="p-4 bg-gray-50">
+                      <h3 className="font-bold text-center text-gray-800 group-hover:text-indigo-600 transition-colors">{category.name}</h3>
+                  </div>
+              </div>
+          </Link>
+        ))}
+      </div>
       </div>
 
       <div className="bg-white py-12">
