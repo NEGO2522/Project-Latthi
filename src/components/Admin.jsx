@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { FiBox, FiPlus, FiEdit, FiTrash2, FiHome, FiUsers, FiClipboard, FiMessageSquare, FiMenu, FiX } from 'react-icons/fi';
-import { AVAILABLE_SIZES, CATEGORIES, AVAILABLE_COLORS } from '../constants';
+import { AVAILABLE_SIZES, CATEGORIES } from '../constants';
 import { convertGoogleDriveLink } from '../utils/imageUtils';
 
 const Admin = () => {
@@ -17,7 +17,7 @@ const Admin = () => {
     price: '',
     description: '',
     fabric: '',
-    colors: [],
+    colors: [''],
     category: 'one-piece',
     sizes: [],
     images: [''],
@@ -53,7 +53,7 @@ const Admin = () => {
         price: product.price || '',
         description: product.description || '',
         fabric: product.fabric || '',
-        colors: Array.isArray(product.colors) ? [...product.colors] : (product.color ? [product.color] : []),
+        colors: product.colors && product.colors.length > 0 ? [...product.colors] : [''],
         category: product.category || 'one-piece',
         sizes: Array.isArray(product.sizes) ? [...product.sizes] : [],
         images: product.images && product.images.length > 0 ? [...product.images] : [''],
@@ -108,14 +108,6 @@ const Admin = () => {
       : [...formData.sizes, value];
     setFormData(prev => ({ ...prev, sizes: newSizes }));
   };
-  
-  const handleColorsChange = (e) => {
-    const { value } = e.target;
-    let newColors = formData.colors.includes(value)
-      ? formData.colors.filter(color => color !== value)
-      : [...formData.colors, value];
-    setFormData(prev => ({ ...prev, colors: newColors }));
-  };
 
   const handleDelete = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
@@ -132,7 +124,7 @@ const Admin = () => {
 
   const resetForm = () => {
     setFormData({
-      name: '', price: '', description: '', fabric: '', colors: [], category: 'one-piece',
+      name: '', price: '', description: '', fabric: '', colors: [''], category: 'one-piece',
       sizes: [], images: [''], features: [''], careInstructions: ['']
     });
     setEditingId(null);
@@ -152,8 +144,9 @@ const Admin = () => {
       return;
     }
     
-    if (!formData.colors.length) {
-        toast.error('Please select at least one color');
+    const validColors = formData.colors.filter(color => color.trim() !== '');
+    if (validColors.length === 0) {
+        toast.error('Please add at least one color');
         return;
     }
 
@@ -169,6 +162,7 @@ const Admin = () => {
         ...formData,
         price: formData.price.trim(),
         images: validImages,
+        colors: validColors,
         features: formData.features.filter(f => f.trim() !== ''),
         careInstructions: formData.careInstructions.filter(i => i.trim() !== '')
       };
@@ -242,8 +236,8 @@ const Admin = () => {
             </button>
           </div>
 
-          <div className="flex flex-col lg:flex-row lg:space-x-10">
-            <div className={`lg:w-1/2 bg-white p-4 sm:p-8 rounded-2xl shadow-lg mb-10 lg:mb-0 transition-all duration-700 ease-in-out ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <div className="flex flex-col lg:flex-row lg:space-x-10 lg:items-start">
+            <div className={`lg:w-1/2 lg:sticky lg:top-10 bg-white p-4 sm:p-8 rounded-2xl shadow-lg mb-10 lg:mb-0 transition-all duration-700 ease-in-out ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
                 {editingId ? <FiEdit className="mr-3 text-indigo-600" /> : <FiPlus className="mr-3 text-indigo-600" />}
                 {editingId ? 'Edit Product' : 'Add a New Product'}
@@ -283,14 +277,25 @@ const Admin = () => {
                   <div className="space-y-6">
                       <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Available Colors</label>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {AVAILABLE_COLORS.map((color) => (
-                              <label key={color} className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer text-sm">
-                              <input type="checkbox" value={color} checked={formData.colors.includes(color)} onChange={handleColorsChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"/>
-                              <span>{color}</span>
-                              </label>
+                          {formData.colors.map((value, index) => (
+                            <div key={index} className="flex items-center space-x-2 mb-2">
+                              <input
+                                type="text"
+                                value={value}
+                                onChange={(e) => handleArrayInputChange(e, 'colors', index)}
+                                className="flex-1 input-field"
+                                placeholder="Enter color"
+                              />
+                              {formData.colors.length > 1 && (
+                                <button type="button" onClick={() => removeArrayField('colors', index)} className="p-2 text-red-500 hover:text-red-700">
+                                  <FiTrash2 />
+                                </button>
+                              )}
+                            </div>
                           ))}
-                          </div>
+                          <button type="button" onClick={() => addArrayField('colors')} className="mt-1 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                            + Add color
+                          </button>
                       </div>
                       <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Available Sizes</label>
@@ -391,7 +396,7 @@ const Admin = () => {
             
             <div className={`lg:w-1/2 transition-all duration-700 ease-in-out delay-200 ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Existing Products ({Object.keys(products).length})</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto pr-4">
                 {Object.entries(products).reverse().map(([id, product]) => (
                   <div key={id} className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-2xl group">
                     <div className="h-56 overflow-hidden">
@@ -401,7 +406,7 @@ const Admin = () => {
                       <h3 className="font-semibold text-lg text-gray-800 truncate">{product.name}</h3>
                       <div className="flex items-center justify-between mt-2">
                           <p className="text-indigo-600 font-bold text-xl">₹{product.price}</p>
-                          <p className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">{product.colors && Array.isArray(product.colors) ? product.colors.join(', ') : product.color || ''}</p>
+                          <p className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">{product.colors && Array.isArray(product.colors) ? product.colors.join(', ') : ''}</p>
                       </div>
                       <div className="mt-4 flex gap-2">
                         <button onClick={() => handleEdit(id)} className="flex-1 btn-secondary text-sm py-2">
