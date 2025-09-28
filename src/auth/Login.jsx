@@ -167,9 +167,9 @@ const Login = () => {
         <div className="mt-6 text-center text-xs text-gray-500">
           <p>
             By signing in, you agree to our{' '}
-            <Link to="/terms" className="font-medium text-indigo-600 hover:underline">Terms of Service</Link>
+            <Link to="/terms_conditions" className="font-medium text-indigo-600 hover:underline">Terms of Service</Link>
             {' and '}
-            <Link to="/privacy" className="font-medium text-indigo-600 hover:underline">Privacy Policy</Link>.
+            <Link to="/privacy_policy" className="font-medium text-indigo-600 hover:underline">Privacy Policy</Link>.
           </p>
         </div>
       </div>
