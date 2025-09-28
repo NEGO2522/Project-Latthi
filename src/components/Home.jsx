@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { database, ref, push, get } from '../firebase/firebase';
 import { toast } from 'react-toastify';
 import Footer from './Footer';
-import { motion, AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line no-unused-vars
+import { AnimatePresence, motion } from 'framer-motion';
 import { CATEGORIES } from '../constants';
 
 const images = [

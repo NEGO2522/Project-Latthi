@@ -1,8 +1,9 @@
+// eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { FiShoppingCart, FiMenu, FiLoader, FiFilter, FiX } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { handleImageError, convertGoogleDriveLink } from '../utils/imageUtils';
 import { ref, onValue } from 'firebase/database';
 import { database } from '../firebase/firebase';
@@ -21,16 +22,16 @@ const Items = ({ user, isAdmin }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  const getCategoryFromURL = () => {
+  const getCategoryFromURL = useCallback(() => {
     const params = new URLSearchParams(location.search);
     return params.get('category') || 'All';
-  }
+  }, [location.search]);
 
   const [selectedCategory, setSelectedCategory] = useState(getCategoryFromURL());
 
   useEffect(() => {
     setSelectedCategory(getCategoryFromURL());
-  }, [location.search]);
+  }, [location.search, getCategoryFromURL]);
 
 
   useEffect(() => {
