@@ -5,7 +5,7 @@ import { database, app } from '../firebase/firebase';
 import { toast } from 'react-toastify';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { FiBox, FiPlus, FiEdit, FiTrash2, FiHome, FiUsers, FiClipboard, FiMessageSquare, FiMenu, FiX } from 'react-icons/fi';
+import { FiBox, FiPlus, FiEdit, FiTrash2, FiHome, FiUsers, FiClipboard, FiMessageSquare, FiDollarSign, FiMenu, FiX } from 'react-icons/fi';
 import { AVAILABLE_SIZES, CATEGORIES } from '../constants';
 import { convertGoogleDriveLink } from '../utils/imageUtils';
 
@@ -220,6 +220,7 @@ const Admin = () => {
             <SideNavLink to="/admin/orders" icon={<FiClipboard className="h-5 w-5" />}>Orders</SideNavLink>
             <SideNavLink to="/admin/subscribers" icon={<FiUsers className="h-5 w-5" />}>Subscribers</SideNavLink>
             <SideNavLink to="/admin/feedback" icon={<FiMessageSquare className="h-5 w-5" />}>Feedback</SideNavLink>
+            <SideNavLink to="/admin/refunds" icon={<FiDollarSign className="h-5 w-5" />}>Refunds</SideNavLink>
             <SideNavLink to="/" icon={<FiHome className="h-5 w-5" />}>Back to Home</SideNavLink>
         </nav>
       </aside>

@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, update, get } from 'firebase/database';
 import { database, auth } from '../firebase/firebase';
-import { FiArrowLeft, FiPackage, FiUser, FiMapPin, FiDollarSign, FiCreditCard, FiDollarSign as FiCash, FiPhone, FiSearch } from 'react-icons/fi';
+import { FiPackage, FiUser, FiMapPin, FiDollarSign, FiCreditCard, FiDollarSign as FiCash, FiPhone, FiSearch, FiArrowLeft } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
 const AdminOrders = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   // Handle search functionality
   useEffect(() => {
@@ -202,30 +202,32 @@ const AdminOrders = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">All Orders</h1>
-          <div className="relative w-full md:w-80">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiSearch className="text-gray-400" />
-            </div>
-            <input
-              type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Search by Order ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <h1 className="text-2xl font-bold text-gray-900">All Orders</h1>
+        <div className="relative w-full md:w-80">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <FiSearch className="text-gray-400" />
           </div>
+          <input
+            type="text"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Search by Order ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
+      </div>
 
         {filteredOrders.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
@@ -242,43 +244,44 @@ const AdminOrders = () => {
         ) : (
           <div className="space-y-6">
             {filteredOrders.map((order) => {
-                const items = getOrderItems(order);
-                const orderIdDisplay = (order.id || 'N/A').slice(-6).toUpperCase();
-                const fullAddress = getFormattedAddress(order);
+              const items = getOrderItems(order);
+              const orderIdDisplay = (order.id || 'N/A').slice(-6).toUpperCase();
+              const fullAddress = getFormattedAddress(order);
+              
+              // Log order information
+              console.log(`Order ${orderIdDisplay} - User Email:`, order.userEmail);
+              if (!order.userEmail) {
+                console.log(`No user email found for order: ${orderIdDisplay}`);
+              }
 
-                console.log(`Order ${orderIdDisplay} - User Email:`, order.userEmail);
-                if (!order.userEmail) {
-                    console.log(`No user email found for order: ${orderIdDisplay}`);
-                }
-
-                return (
-                    <div key={order.id} className="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
-                        <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                                        Order #{orderIdDisplay}
-                                    </h3>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        Customer: {order.userEmail || 'No email available'}
-                                    </p>
-                                    {order.userId && (
-                                        <p className="text-xs text-gray-400 mt-1">
-                                            User ID: {order.userId}
-                                        </p>
-                                    )}
-                                </div>
-                                <div>
-                                    <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium ${
-                                        order.status === 'delivered' ? 'bg-green-100 text-green-800' 
-                                        : order.status === 'shipped' ? 'bg-blue-100 text-blue-800'
-                                        : order.status === 'cancelled' ? 'bg-red-100 text-red-800'
-                                        : 'bg-yellow-100 text-yellow-800'}`}>
-                                        {order.status || 'pending'}
-                                    </span>
-                                </div>
-                            </div>
-                </div>
+              return (
+                <div key={order.id} className="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                  <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="text-lg leading-6 font-medium text-gray-900">
+                          Order #{orderIdDisplay}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Customer: {order.userEmail || 'No email available'}
+                        </p>
+                        {order.userId && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            User ID: {order.userId}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium ${
+                          order.status === 'delivered' ? 'bg-green-100 text-green-800' 
+                          : order.status === 'shipped' ? 'bg-blue-100 text-blue-800'
+                          : order.status === 'cancelled' ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'}`}>
+                          {order.status || 'pending'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
                 <div className="border-b border-gray-200">
                   <dl className="sm:divide-y sm:divide-gray-200">
@@ -366,13 +369,15 @@ const AdminOrders = () => {
                           className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                             order.status === status 
                             ? 'bg-indigo-400 cursor-not-allowed' 
-                            : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'}`}>{status}
+                            : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'}`}>
+                            {status}
                         </button>
                       ))}
                    </div>
                 </div>
               </div>
-            )})}
+              );
+            })}
           </div>
         )}
       </div>
