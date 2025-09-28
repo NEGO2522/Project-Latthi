@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ref, onValue, off, update } from 'firebase/database';
+import { ref, update, onValue } from 'firebase/database';
 import { database, auth } from '../firebase/firebase';
-import { FiArrowLeft, FiPackage, FiUser, FiMapPin, FiDollarSign, FiClock } from 'react-icons/fi';
+import { FiArrowLeft, FiPackage, FiUser, FiMapPin, FiDollarSign } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
 const AdminOrders = () => {
@@ -14,7 +14,6 @@ const AdminOrders = () => {
     const user = auth.currentUser;
     if (!user) {
       navigate('/login');
-      toast.error('You must be logged in to view this page.');
       return;
     }
 
@@ -27,43 +26,86 @@ const AdminOrders = () => {
       return;
     }
 
-    const ordersRef = ref(database, 'allOrders');
     setLoading(true);
+    const listeners = [];
+    let allSources = { users: [], root: [], all: [] };
 
-    const unsubscribe = onValue(ordersRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const ordersData = snapshot.val();
-        const allOrders = Object.entries(ordersData).map(([orderId, orderData]) => ({
-          ...orderData,
-          id: orderId,
-        }));
-        allOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setOrders(allOrders);
+    const combineAndSetOrders = () => {
+      const allOrders = [...allSources.users, ...allSources.root, ...allSources.all];
+      if (allOrders.length > 0) {
+        const uniqueOrders = Array.from(new Map(allOrders.map(o => [o.id, o])).values());
+        uniqueOrders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        setOrders(uniqueOrders);
       } else {
         setOrders([]);
       }
       setLoading(false);
+    };
+
+    // --- Listener 1: Nested orders inside /users ---
+    const usersRef = ref(database, 'users');
+    const usersListener = onValue(usersRef, (snapshot) => {
+      let nestedOrders = [];
+      if (snapshot.exists()) {
+        snapshot.forEach(userSnapshot => {
+          const userId = userSnapshot.key;
+          const userData = userSnapshot.val();
+          const ordersNode = userSnapshot.child('orders');
+
+          if (ordersNode.exists()) {
+            ordersNode.forEach(orderSnapshot => {
+              const orderData = orderSnapshot.val();
+              // Enrich order: If address is missing in order, use user's address as fallback.
+              const finalAddress = orderData.address || userData.address;
+
+              nestedOrders.push({
+                ...orderData,
+                id: orderSnapshot.key,
+                address: finalAddress, // Use the potentially enriched address
+                sourcePath: `users/${userId}/orders`,
+                userId: userId, // Explicitly add userId
+                userEmail: userData.email || (orderData.user && orderData.user.email),
+                userName: userData.name || (finalAddress ? finalAddress.fullName : null),
+              });
+            });
+          }
+        });
+      }
+      allSources.users = nestedOrders;
+      combineAndSetOrders();
     }, (error) => {
-      console.error("Firebase read error:", error);
-      toast.error("Failed to fetch orders.");
-      setLoading(false);
+      console.error("Error fetching from /users:", error);
+      toast.error(`Could not fetch user orders: ${error.message}`);
+    });
+    listeners.push(usersListener);
+
+    // --- Listeners 2 & 3 for root /orders and /allOrders ---
+    const rootPaths = ['orders', 'allOrders'];
+    rootPaths.forEach(path => {
+        const pathRef = ref(database, path);
+        const listener = onValue(pathRef, (snapshot) => {
+            const sourceKey = path === 'orders' ? 'root' : 'all';
+            allSources[sourceKey] = snapshot.exists() ? Object.entries(snapshot.val()).map(([id, order]) => ({ ...order, id, sourcePath: path })) : [];
+            combineAndSetOrders();
+        }, (error) => {
+            console.error(`Error fetching from /${path}:`, error);
+        });
+        listeners.push(listener);
     });
 
-    return () => off(ordersRef, 'value', unsubscribe);
-
+    return () => {
+      listeners.forEach(unsubscribe => unsubscribe());
+    };
   }, [navigate]);
 
-  const updateOrderStatus = async (orderId, newStatus) => {
+  const updateOrderStatus = async (orderId, newStatus, sourcePath) => {
+    if (!sourcePath) {
+        toast.error('Cannot update order: source path is unknown.');
+        return;
+    }
     try {
-      const orderRef = ref(database, `allOrders/${orderId}`);
+      const orderRef = ref(database, `${sourcePath}/${orderId}`);
       await update(orderRef, { status: newStatus, updatedAt: new Date().toISOString() });
-      
-      const order = orders.find(o => o.id === orderId);
-      if (order && order.user && order.user.id) {
-        const userOrderRef = ref(database, `users/${order.user.id}/orders/${orderId}`);
-        await update(userOrderRef, { status: newStatus, updatedAt: new Date().toISOString() });
-      }
-      
       toast.success(`Order status updated to ${newStatus}`);
     } catch (error) {
       console.error('Error updating order status:', error);
@@ -72,13 +114,16 @@ const AdminOrders = () => {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount || 0);
   };
+  
+  const getOrderItems = (order) => {
+      if (order.items && Array.isArray(order.items)) return order.items;
+      if (order.item) return [order.item];
+      return [];
+  }
 
-  if (loading) {
+  if (loading && orders.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -96,22 +141,26 @@ const AdminOrders = () => {
           <h1 className="text-3xl font-bold text-gray-900">All Orders</h1>
         </div>
 
-        {orders.length === 0 ? (
+        {orders.length === 0 && !loading ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <FiPackage className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-lg font-medium text-gray-900">No orders found</h3>
+            <p className="mt-1 text-sm text-gray-500">Listening for orders from all sources...</p>
           </div>
         ) : (
           <div className="space-y-6">
-            {orders.map((order) => (
+            {orders.map((order) => {
+                const items = getOrderItems(order);
+                const orderIdDisplay = (order.dbOrderId || order.id || 'N/A').slice(-6).toUpperCase();
+                return (
               <div key={order.id} className="bg-white shadow overflow-hidden sm:rounded-lg">
                  <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
                   <div>
                     <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Order #{order.id.slice(-6).toUpperCase()}
+                      Order #{orderIdDisplay}
                     </h3>
                      <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                      {new Date(order.createdAt).toLocaleString()}
+                      {order.createdAt ? new Date(order.createdAt).toLocaleString() : 'No date'}
                     </p>
                   </div>
                   <div>
@@ -119,76 +168,69 @@ const AdminOrders = () => {
                       order.status === 'delivered' ? 'bg-green-100 text-green-800' 
                       : order.status === 'shipped' ? 'bg-blue-100 text-blue-800'
                       : order.status === 'cancelled' ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {order.status}
-                    </span>
+                      : 'bg-yellow-100 text-yellow-800'}`}>{order.status || 'pending'}</span>
                   </div>
                 </div>
 
                 <div className="border-b border-gray-200">
                   <dl className="sm:divide-y sm:divide-gray-200">
                     <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                      <dt className="text-sm font-medium text-gray-500 flex items-center">
-                        <FiUser className="mr-2" /> Customer
-                      </dt>
+                      <dt className="text-sm font-medium text-gray-500 flex items-center"><FiUser className="mr-2" /> Customer</dt>
                       <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        {order.address.fullName}<br/>
-                        {order.user.email}<br/>
-                        {order.address.mobileNumber}
+                        {order.address?.fullName || order.userName || 'N/A'}<br/>
+                        <span className="text-gray-600">{order.userEmail || 'N/A'}</span><br/>
+                        <span className="text-gray-600">{order.address?.mobileNumber || 'N/A'}</span><br/>
+                        <span className="text-xs text-gray-400 mt-1">User ID: {order.userId || 'N/A'}</span>
                       </dd>
                     </div>
                      <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                      <dt className="text-sm font-medium text-gray-500 flex items-center">
-                        <FiMapPin className="mr-2" /> Shipping Address
-                      </dt>
+                      <dt className="text-sm font-medium text-gray-500 flex items-center"><FiMapPin className="mr-2" /> Shipping Address</dt>
                       <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        {order.address.address1}, {order.address.city}, {order.address.state}, {order.address.pincode}
+                        {order.address ? `${order.address.address1 || ''}, ${order.address.city || ''}, ${order.address.state || ''}, ${order.address.pincode || ''}` : 'No address provided'}
                       </dd>
                     </div>
                     <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                       <dt className="text-sm font-medium text-gray-500 flex items-center">
-                        <FiDollarSign className="mr-2" /> Order Total
-                      </dt>
-                      <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        {formatCurrency(order.total)}
-                      </dd>
+                       <dt className="text-sm font-medium text-gray-900 flex items-center"><FiDollarSign className="mr-2" /> Order Total</dt>
+                      <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{formatCurrency(order.total)}</dd>
                     </div>
                   </dl>
                 </div>
 
                 <div className="px-4 py-5 sm:p-6">
                     <h4 className="text-sm font-medium text-gray-900 mb-4">Order Items</h4>
-                    <div className="space-y-4">
-                        <div className="flex items-start py-4">
-                          <div className="flex-shrink-0 h-16 w-16 rounded-md overflow-hidden border border-gray-200">
-                           <img src={order.item.images[0]} alt={order.item.name} className="h-full w-full object-cover"/>
-                          </div>
-                          <div className="ml-4 flex-1">
-                            <h5 className="text-sm font-medium text-gray-900">{order.item.name}</h5>
-                            <p className="text-sm text-gray-500">Size: {Array.isArray(order.item.sizes) ? order.item.sizes.join(', ') : order.item.sizes}</p>
-                            <p className="text-sm text-gray-500">Qty: {order.item.quantity || 1}</p>
-                          </div>
-                           <div className="ml-4 text-right">
-                            <p className="text-sm font-medium text-gray-900">{formatCurrency(order.item.price)}</p>
-                          </div>
+                    {items.length > 0 ? items.map((item, index) => (
+                      <div key={index} className="flex items-start py-4 border-b border-gray-100">
+                        <div className="flex-shrink-0 h-16 w-16 rounded-md overflow-hidden border border-gray-200 bg-gray-50">
+                         <img src={item.images && item.images[0] ? item.images[0] : (item.image || 'https://via.placeholder.com/150')} alt={item.name || 'Product Image'} className="h-full w-full object-cover"/>
                         </div>
-                    </div>
+                        <div className="ml-4 flex-1">
+                          <h5 className="text-sm font-medium text-gray-900">{item.name || 'N/A'}</h5>
+                          <p className="text-sm text-gray-500">Size: {Array.isArray(item.sizes) ? item.sizes.join(', ') : (item.sizes || 'N/A')}</p>
+                          <p className="text-sm text-gray-500">Qty: {item.quantity || 1}</p>
+                        </div>
+                         <div className="ml-4 text-right">
+                          <p className="text-sm font-medium text-gray-900">{formatCurrency(item.price)}</p>
+                        </div>
+                      </div>
+                    )) : <p className='text-sm text-gray-500'>No items found for this order.</p>}
                 </div>
 
                 <div className="px-4 py-4 sm:px-6 bg-gray-50">
                    <h4 className="text-sm font-medium text-gray-900 mb-3">Update Status</h4>
                    <div className="flex flex-wrap gap-2">
-                      {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => (
-                        <button key={status} onClick={() => updateOrderStatus(order.id, status)} disabled={order.status === status}
-                          className={`btn-sm ${order.status === status ? 'btn-primary' : 'btn-secondary'}`}>
-                          {status}
+                      {['processing', 'shipped', 'delivered', 'cancelled'].map((status) => (
+                        <button key={status} onClick={() => updateOrderStatus(order.id, status, order.sourcePath)} disabled={order.status === status}
+                          className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                            order.status === status 
+                            ? 'bg-indigo-400 cursor-not-allowed' 
+                            : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'}`}>{status}
                         </button>
                       ))}
                    </div>
                 </div>
               </div>
-            ))}
+            )})
+          }
           </div>
         )}
       </div>

@@ -108,20 +108,18 @@ const Adress = () => {
         razorpayPaymentId: paymentId,
         razorpayOrderId: orderId,
         razorpaySignature: signature,
-        item: itemToPurchase,
+        items: [itemToPurchase],
         address: formData,
         total: itemToPurchase.price * (itemToPurchase.quantity || 1),
-        status: 'paid',
+        status: 'processing',
         createdAt: new Date().toISOString(),
-        user: {
-            id: user.uid,
-            email: user.email,
-        },
+        timestamp: Date.now(),
+        userId: user.uid,
+        userEmail: user.email,
     };
     
     try {
-        await set(ref(database, `users/${user.uid}/orders/${dbOrderId}`), orderDetails);
-        await set(ref(database, `allOrders/${dbOrderId}`), orderDetails);
+        await set(ref(database, `orders/${dbOrderId}`), orderDetails);
         await sendOrderConfirmationEmail(user.email, orderDetails);
         
         if (location.state.fromCart) {
@@ -146,8 +144,8 @@ const Adress = () => {
         order_id: orderDetails.dbOrderId,
         order_total: `₹${orderDetails.total}`,
         delivery_address: `${orderDetails.address.address1}, ${orderDetails.address.city}, ${orderDetails.address.state} - ${orderDetails.address.pincode}`,
-        item_name: orderDetails.item.name,
-        quantity: orderDetails.item.quantity || 1,
+        item_name: orderDetails.items[0].name,
+        quantity: orderDetails.items[0].quantity || 1,
         message: 'Thank you for your order! It will be delivered within 3 business days.'
       });
     } catch (error) {

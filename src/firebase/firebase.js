@@ -9,7 +9,7 @@ import {
   signInWithPopup,
   onAuthStateChanged
 } from "firebase/auth";
-import { getDatabase, ref, set, push, onValue, remove, get } from "firebase/database";
+import { getDatabase, ref, set, push, onValue, remove, get, query, orderByChild, equalTo } from "firebase/database";
 
 // Firebase configuration using environment variables
 const firebaseConfig = {
@@ -62,5 +62,8 @@ export {
   push, 
   onValue,
   remove,
-  get
+  get,
+  query,
+  orderByChild,
+  equalTo
 };

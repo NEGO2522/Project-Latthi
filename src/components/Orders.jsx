@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowLeft, FiPackage, FiClock, FiCheckCircle, FiTruck, FiXCircle } from 'react-icons/fi';
-import { auth, database, ref, onValue } from '../firebase/firebase';
+import { auth, database, ref, onValue, query, orderByChild, equalTo } from '../firebase/firebase';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -18,11 +18,12 @@ const Orders = () => {
           return;
         }
 
-        // Reference to the user's addresses/orders
-        const userOrdersRef = ref(database, `users/${user.uid}/addresses`);
+        const ordersRef = ref(database, 'orders');
+        const userOrdersQuery = query(ordersRef, orderByChild('userId'), equalTo(user.uid));
+
         
         // Set up a realtime listener for the user's orders
-        const unsubscribe = onValue(userOrdersRef, (snapshot) => {
+        const unsubscribe = onValue(userOrdersQuery, (snapshot) => {
           const ordersData = [];
           if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
