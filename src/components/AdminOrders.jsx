@@ -2,13 +2,33 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, update, get } from 'firebase/database';
 import { database, auth } from '../firebase/firebase';
-import { FiArrowLeft, FiPackage, FiUser, FiMapPin, FiDollarSign, FiCreditCard, FiDollarSign as FiCash, FiPhone } from 'react-icons/fi';
+import { FiArrowLeft, FiPackage, FiUser, FiMapPin, FiDollarSign, FiCreditCard, FiDollarSign as FiCash, FiPhone, FiSearch } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Handle search functionality
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredOrders(orders);
+    } else {
+      const searchLower = searchTerm.toLowerCase().trim();
+      const filtered = orders.filter(order => {
+        // Check if the order ID includes the search term (case insensitive)
+        const orderIdMatch = order.id && order.id.toLowerCase().includes(searchLower);
+        // Also check the display ID (last 6 characters)
+        const displayId = order.id ? order.id.slice(-6).toLowerCase() : '';
+        const displayIdMatch = displayId.includes(searchLower);
+        return orderIdMatch || displayIdMatch;
+      });
+      setFilteredOrders(filtered);
+    }
+  }, [searchTerm, orders]);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -121,6 +141,7 @@ const AdminOrders = () => {
         });
 
         setOrders(uniqueOrders);
+        setFilteredOrders(uniqueOrders);
 
     } catch (error) {
         console.error("Error fetching all orders:", error);
@@ -190,22 +211,37 @@ const AdminOrders = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <button onClick={() => navigate('/')} className="flex items-center text-gray-600 hover:text-gray-900 mb-4">
-            <FiArrowLeft className="mr-2" /> Back to Dashboard
-          </button>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <h1 className="text-3xl font-bold text-gray-900">All Orders</h1>
+          <div className="relative w-full md:w-80">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiSearch className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Search by Order ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
-        {orders.length === 0 ? (
+        {filteredOrders.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <FiPackage className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-lg font-medium text-gray-900">No orders found</h3>
-            <p className="mt-1 text-sm text-gray-500">There are no orders from any user.</p>
+            <h3 className="mt-2 text-lg font-medium text-gray-900">
+              {searchTerm ? 'No matching orders found' : 'No orders found'}
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {searchTerm 
+                ? 'Try a different search term' 
+                : 'There are no orders from any user.'}
+            </p>
           </div>
         ) : (
           <div className="space-y-6">
-            {orders.map((order) => {
+            {filteredOrders.map((order) => {
                 const items = getOrderItems(order);
                 const orderIdDisplay = (order.id || 'N/A').slice(-6).toUpperCase();
                 const fullAddress = getFormattedAddress(order);
