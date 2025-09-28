@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, update, get } from 'firebase/database';
 import { database, auth } from '../firebase/firebase';
-import { FiArrowLeft, FiPackage, FiUser, FiMapPin, FiDollarSign } from 'react-icons/fi';
+import { FiArrowLeft, FiPackage, FiUser, FiMapPin, FiDollarSign, FiCreditCard, FiDollarSign as FiCash, FiPhone } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
 const AdminOrders = () => {
@@ -81,17 +81,35 @@ const AdminOrders = () => {
         }
 
         ordersById.forEach((order, id) => {
+            // Log the entire order object for debugging
+            console.log(`Order ${id} data:`, JSON.stringify(order, null, 2));
+            
+            // First, try to get email from the order data itself
+            // The email might be directly on the order or in the address object
+            const orderEmail = order.email || (order.address && order.address.email);
+            
+            // Then try to get from user info if userId exists
+            let userInfoEmail = null;
             if (order.userId) {
                 const userInfo = userInfoMap.get(order.userId);
                 if (userInfo) {
-                    if (!order.userEmail) {
-                        order.userEmail = userInfo.email;
-                    }
+                    userInfoEmail = userInfo.email;
                     if (userInfo.address) {
                         order.address = { ...userInfo.address, ...(order.address || {}) };
                     }
+                } else {
+                    console.log(`No user info found for userId: ${order.userId}`);
                 }
+            } else {
+                console.log(`No userId found for order: ${id}`);
             }
+            
+            // Set the email with priority to order email, then user info email
+            order.userEmail = orderEmail || userInfoEmail || 'No email found';
+            
+            // Debug log
+            console.log(`Order ${id} - Email from order: ${orderEmail}, from user info: ${userInfoEmail}, final: ${order.userEmail}`);
+            
             ordersById.set(id, order);
         });
 
@@ -192,35 +210,84 @@ const AdminOrders = () => {
                 const orderIdDisplay = (order.id || 'N/A').slice(-6).toUpperCase();
                 const fullAddress = getFormattedAddress(order);
 
+                console.log(`Order ${orderIdDisplay} - User Email:`, order.userEmail);
+                if (!order.userEmail) {
+                    console.log(`No user email found for order: ${orderIdDisplay}`);
+                }
+
                 return (
-              <div key={order.id} className="bg-white shadow overflow-hidden sm:rounded-lg">
-                 <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Order #{orderIdDisplay}
-                    </h3>
-                     <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                      {getOrderDate(order)}
-                    </p>
-                  </div>
-                  <div>
-                    <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium ${
-                      order.status === 'delivered' ? 'bg-green-100 text-green-800' 
-                      : order.status === 'shipped' ? 'bg-blue-100 text-blue-800'
-                      : order.status === 'cancelled' ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'}`}>{order.status || 'pending'}</span>
-                  </div>
+                    <div key={order.id} className="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                        <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                                        Order #{orderIdDisplay}
+                                    </h3>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        Customer: {order.userEmail || 'No email available'}
+                                    </p>
+                                    {order.userId && (
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            User ID: {order.userId}
+                                        </p>
+                                    )}
+                                </div>
+                                <div>
+                                    <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium ${
+                                        order.status === 'delivered' ? 'bg-green-100 text-green-800' 
+                                        : order.status === 'shipped' ? 'bg-blue-100 text-blue-800'
+                                        : order.status === 'cancelled' ? 'bg-red-100 text-red-800'
+                                        : 'bg-yellow-100 text-yellow-800'}`}>
+                                        {order.status || 'pending'}
+                                    </span>
+                                </div>
+                            </div>
                 </div>
 
                 <div className="border-b border-gray-200">
                   <dl className="sm:divide-y sm:divide-gray-200">
                     <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                       <dt className="text-sm font-medium text-gray-500 flex items-center"><FiUser className="mr-2" /> Customer</dt>
+                      <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 space-y-1">
+                        <div className="font-medium">{getCustomerDetail(order, 'fullName') || 'N/A'}</div>
+                        
+                        <div className="text-gray-600 flex items-center">
+                          <svg className="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          {order.userEmail || 'N/A'}
+                        </div>
+                        
+                        <div className="text-gray-600 flex items-center">
+                          <FiPhone className="h-4 w-4 mr-1.5 text-gray-400" />
+                          {order.phone || getCustomerDetail(order, 'phone') || getCustomerDetail(order, 'mobileNumber') || 'N/A'}
+                        </div>
+                        
+                        <div className="pt-1">
+                          <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded">
+                            User ID: {order.userId || 'N/A'}
+                          </span>
+                        </div>
+                      </dd>
+                    </div>
+                    <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                      <dt className="text-sm font-medium text-gray-500 flex items-center">
+                        {order.paymentMethod === 'Cash on Delivery' ? (
+                          <FiCash className="mr-2" />
+                        ) : (
+                          <FiCreditCard className="mr-2" />
+                        )}
+                        Payment Method
+                      </dt>
                       <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        {getCustomerDetail(order, 'fullName') || 'N/A'}<br/>
-                        <span className="text-gray-600">{order.userEmail || 'N/A'}</span><br/>
-                        <span className="text-gray-600">{getCustomerDetail(order, 'mobileNumber') || 'N/A'}</span><br/>
-                        <span className="text-xs text-gray-400 mt-1">User ID: {order.userId || 'N/A'}</span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {order.paymentMethod || 'Not specified'}
+                        </span>
+                        {order.paymentId && (
+                          <div className="mt-1 text-xs text-gray-500">
+                            Payment ID: {order.paymentId}
+                          </div>
+                        )}
                       </dd>
                     </div>
                      <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
