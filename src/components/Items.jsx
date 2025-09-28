@@ -1,6 +1,8 @@
 // eslint-disable-next-line no-unused-vars
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { getAuth } from 'firebase/auth';
 import { FiShoppingCart, FiMenu, FiLoader, FiFilter, FiX } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -14,9 +16,10 @@ import { CATEGORIES } from '../constants'; // Import CATEGORIES
 const Items = ({ user, isAdmin }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { getCartCount } = useCart();
+  const { getCartCount, addToCart } = useCart();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const auth = getAuth();
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -214,7 +217,30 @@ const Items = ({ user, isAdmin }) => {
                         <p className="text-lg font-semibold text-indigo-600 mb-3">{item.price}</p>
                         <p className="text-sm text-gray-600 line-clamp-2 flex-grow mb-4">{item.description}</p>
                         <div className="mt-auto flex flex-col gap-2 pt-2 border-t border-gray-100">
-                           <button onClick={(e) => { e.stopPropagation(); }} className="w-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center transition-colors"><FiShoppingCart className="mr-2" />Add to Cart</button>
+                           <button 
+                             onClick={(e) => { 
+                               e.stopPropagation();
+                               const user = auth.currentUser;
+                               if (!user) {
+                                 toast.info('Please log in to add items to your cart.');
+                                 navigate('/login', { state: { from: location } });
+                                 return;
+                               }
+                               addToCart(item, 'M', 1);
+                               toast.success(`${item.name} added to cart!`, {
+                                 position: "top-center",
+                                 autoClose: 2000,
+                                 hideProgressBar: true,
+                                 closeOnClick: true,
+                                 pauseOnHover: true,
+                                 draggable: true,
+                                 progress: undefined,
+                               });
+                             }} 
+                             className="w-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center transition-colors"
+                           >
+                             <FiShoppingCart className="mr-2" />Add to Cart
+                           </button>
                            <button onClick={(e) => { e.stopPropagation(); navigate('/adress', { state: { item: { ...item, quantity: 1 } } }); }} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-lg text-sm font-bold transition-colors">Buy Now</button>
                         </div>
                       </div>
