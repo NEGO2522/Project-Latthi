@@ -12,7 +12,9 @@ const Adress = () => {
   const navigate = useNavigate();
   const { clearCart } = useCart();
   const [submitting, setSubmitting] = useState(false);
-  const [itemToPurchase, setItemToPurchase] = useState(null);
+  const [itemsToPurchase, setItemsToPurchase] = useState([]);
+  const [isFromCart, setIsFromCart] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: '',
     mobileNumber: '',
@@ -28,11 +30,20 @@ const Adress = () => {
 
   useEffect(() => {
     if (location.state && location.state.item) {
-      setItemToPurchase(location.state.item);
+      if (Array.isArray(location.state.item)) {
+        setItemsToPurchase(location.state.item);
+      } else {
+        setItemsToPurchase([location.state.item]);
+      }
+      setIsFromCart(location.state.fromCart || false);
     } else {
-      navigate('/');
+      // navigate('/');
     }
   }, [location.state, navigate]);
+
+  const getTotalAmount = () => {
+    return itemsToPurchase.reduce((total, item) => total + item.price * (item.quantity || 1), 0);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,12 +55,12 @@ const Adress = () => {
       const response = await fetch('http://localhost:5000/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, receipt: `order_rcptid_${Date.now()}` })
+        body: JSON.stringify({ amount: amount * 100, receipt: `order_rcptid_${Date.now()}` })
       });
       const order = await response.json();
 
       const options = {
-        key: 'rzp_test_YourRazorpayKeyId', // Replace with your Key ID
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency,
         name: "LATHI",
@@ -87,12 +98,12 @@ const Adress = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitting(true);
-    if (!itemToPurchase) {
-        toast.error("No item selected for purchase.");
+    if (itemsToPurchase.length === 0) {
+        toast.error("No items selected for purchase.");
         setSubmitting(false);
         return;
     }
-    const totalAmount = itemToPurchase.price * (itemToPurchase.quantity || 1);
+    const totalAmount = getTotalAmount();
     checkout(totalAmount);
   };
 
@@ -108,9 +119,9 @@ const Adress = () => {
         razorpayPaymentId: paymentId,
         razorpayOrderId: orderId,
         razorpaySignature: signature,
-        items: [itemToPurchase],
+        items: itemsToPurchase,
         address: formData,
-        total: itemToPurchase.price * (itemToPurchase.quantity || 1),
+        total: getTotalAmount(),
         status: 'processing',
         createdAt: new Date().toISOString(),
         timestamp: Date.now(),
@@ -119,10 +130,11 @@ const Adress = () => {
     };
     
     try {
+        await set(ref(database, `users/${user.uid}/orders/${dbOrderId}`), orderDetails);
         await set(ref(database, `orders/${dbOrderId}`), orderDetails);
         await sendOrderConfirmationEmail(user.email, orderDetails);
         
-        if (location.state.fromCart) {
+        if (isFromCart) {
             clearCart();
         }
 
@@ -137,15 +149,15 @@ const Adress = () => {
   
   const sendOrderConfirmationEmail = async (userEmail, orderDetails) => {
     try {
-      emailjs.init('ysnBHfSgoyz0mMUgP'); // Replace with your EmailJS user ID
-      await emailjs.send('service_ldbz037', 'template_3sqwp3j', { // Replace with your Service & Template ID
+      emailjs.init(import.meta.env.VITE_EMAILJS_USER_ID);
+      await emailjs.send(import.meta.env.VITE_EMAILJS_SERVICE_ID, import.meta.env.VITE_EMAILJS_TEMPLATE_ID, {
         customer_email: userEmail,
         to_name: orderDetails.address.fullName,
         order_id: orderDetails.dbOrderId,
         order_total: `₹${orderDetails.total}`,
         delivery_address: `${orderDetails.address.address1}, ${orderDetails.address.city}, ${orderDetails.address.state} - ${orderDetails.address.pincode}`,
-        item_name: orderDetails.items[0].name,
-        quantity: orderDetails.items[0].quantity || 1,
+        item_name: orderDetails.items.map(item => item.name).join(', '),
+        quantity: orderDetails.items.reduce((acc, item) => acc + (item.quantity || 1), 0),
         message: 'Thank you for your order! It will be delivered within 3 business days.'
       });
     } catch (error) {
@@ -153,8 +165,12 @@ const Adress = () => {
     }
   };
 
-  if (!itemToPurchase) {
-      return <div>Loading...</div>;
+  if (itemsToPurchase.length === 0) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <p>No items to purchase. Redirecting...</p>
+        </div>
+      );
   }
 
   return (
@@ -174,11 +190,11 @@ const Adress = () => {
           <input type="text" name="address1" value={formData.address1} onChange={handleChange} placeholder="Address Line 1" className="w-full p-3 border rounded-md" required />
           <input type="text" name="address2" value={formData.address2} onChange={handleChange} placeholder="Address Line 2 (Optional)" className="w-full p-3 border rounded-md" />
           <button type="submit" className="w-full bg-indigo-600 text-white p-3 rounded-md hover:bg-indigo-700 disabled:bg-indigo-400" disabled={submitting}>
-            {submitting ? 'Processing Payment...' : `Pay ₹${itemToPurchase.price * (itemToPurchase.quantity || 1)}`}
+            {submitting ? 'Processing Payment...' : `Pay ₹${getTotalAmount()}`}
           </button>
         </form>
         <div className="mt-6 text-center">
-          <Link to="/cart" className="text-indigo-600 hover:underline">Back to Cart</Link>
+          <Link to={isFromCart ? "/cart" : "/"} className="text-indigo-600 hover:underline">Back</Link>
         </div>
       </div>
     </div>

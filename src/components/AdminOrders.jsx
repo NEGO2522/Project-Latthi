@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ref, update, onValue } from 'firebase/database';
+import { ref, update, get } from 'firebase/database';
 import { database, auth } from '../firebase/firebase';
 import { FiArrowLeft, FiPackage, FiUser, FiMapPin, FiDollarSign } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -26,91 +26,119 @@ const AdminOrders = () => {
       return;
     }
 
-    setLoading(true);
-    const listeners = [];
-    let allSources = { users: [], root: [], all: [] };
-
-    const combineAndSetOrders = () => {
-      const allOrders = [...allSources.users, ...allSources.root, ...allSources.all];
-      if (allOrders.length > 0) {
-        const uniqueOrders = Array.from(new Map(allOrders.map(o => [o.id, o])).values());
-        uniqueOrders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-        setOrders(uniqueOrders);
-      } else {
-        setOrders([]);
-      }
-      setLoading(false);
-    };
-
-    // --- Listener 1: Nested orders inside /users ---
-    const usersRef = ref(database, 'users');
-    const usersListener = onValue(usersRef, (snapshot) => {
-      let nestedOrders = [];
-      if (snapshot.exists()) {
-        snapshot.forEach(userSnapshot => {
-          const userId = userSnapshot.key;
-          const userData = userSnapshot.val();
-          const ordersNode = userSnapshot.child('orders');
-
-          if (ordersNode.exists()) {
-            ordersNode.forEach(orderSnapshot => {
-              const orderData = orderSnapshot.val();
-              // Enrich order: If address is missing in order, use user's address as fallback.
-              const finalAddress = orderData.address || userData.address;
-
-              nestedOrders.push({
-                ...orderData,
-                id: orderSnapshot.key,
-                address: finalAddress, // Use the potentially enriched address
-                sourcePath: `users/${userId}/orders`,
-                userId: userId, // Explicitly add userId
-                userEmail: userData.email || (orderData.user && orderData.user.email),
-                userName: userData.name || (finalAddress ? finalAddress.fullName : null),
-              });
-            });
-          }
-        });
-      }
-      allSources.users = nestedOrders;
-      combineAndSetOrders();
-    }, (error) => {
-      console.error("Error fetching from /users:", error);
-      toast.error(`Could not fetch user orders: ${error.message}`);
-    });
-    listeners.push(usersListener);
-
-    // --- Listeners 2 & 3 for root /orders and /allOrders ---
-    const rootPaths = ['orders', 'allOrders'];
-    rootPaths.forEach(path => {
-        const pathRef = ref(database, path);
-        const listener = onValue(pathRef, (snapshot) => {
-            const sourceKey = path === 'orders' ? 'root' : 'all';
-            allSources[sourceKey] = snapshot.exists() ? Object.entries(snapshot.val()).map(([id, order]) => ({ ...order, id, sourcePath: path })) : [];
-            combineAndSetOrders();
-        }, (error) => {
-            console.error(`Error fetching from /${path}:`, error);
-        });
-        listeners.push(listener);
-    });
-
-    return () => {
-      listeners.forEach(unsubscribe => unsubscribe());
-    };
+    fetchAllOrders();
   }, [navigate]);
 
+  const fetchAllOrders = async () => {
+    setLoading(true);
+    try {
+        const [usersSnapshot, ordersSnapshot, allOrdersSnapshot] = await Promise.all([
+            get(ref(database, 'users')),
+            get(ref(database, 'orders')),
+            get(ref(database, 'allOrders')),
+        ]);
+
+        const userInfoMap = new Map();
+        if (usersSnapshot.exists()) {
+            usersSnapshot.forEach(userSnapshot => {
+                const userData = userSnapshot.val();
+                userInfoMap.set(userSnapshot.key, {
+                    email: userData.email,
+                    name: userData.name,
+                    address: userData.address
+                });
+            });
+        }
+
+        const ordersById = new Map();
+
+        if (allOrdersSnapshot.exists()) {
+            Object.entries(allOrdersSnapshot.val()).forEach(([id, order]) => {
+                ordersById.set(id, { ...order, id, sourcePath: 'allOrders' });
+            });
+        }
+
+        if (ordersSnapshot.exists()) {
+            Object.entries(ordersSnapshot.val()).forEach(([id, order]) => {
+                const existing = ordersById.get(id) || {};
+                ordersById.set(id, { ...existing, ...order, id, sourcePath: 'orders' });
+            });
+        }
+
+        if (usersSnapshot.exists()) {
+            usersSnapshot.forEach(userSnapshot => {
+                const userId = userSnapshot.key;
+                const ordersNode = userSnapshot.child('orders');
+                if (ordersNode.exists()) {
+                    ordersNode.forEach(orderSnapshot => {
+                        const id = orderSnapshot.key;
+                        const orderData = orderSnapshot.val();
+                        const existing = ordersById.get(id) || {};
+                        ordersById.set(id, { ...existing, ...orderData, id, userId, sourcePath: `users/${userId}/orders` });
+                    });
+                }
+            });
+        }
+
+        ordersById.forEach((order, id) => {
+            if (order.userId) {
+                const userInfo = userInfoMap.get(order.userId);
+                if (userInfo) {
+                    if (!order.userEmail) {
+                        order.userEmail = userInfo.email;
+                    }
+                    if (userInfo.address) {
+                        order.address = { ...userInfo.address, ...(order.address || {}) };
+                    }
+                }
+            }
+            ordersById.set(id, order);
+        });
+
+        const uniqueOrders = Array.from(ordersById.values());
+        uniqueOrders.sort((a, b) => {
+            const dateA = new Date(a.createdAt || a.timestamp || 0).getTime();
+            const dateB = new Date(b.createdAt || b.timestamp || 0).getTime();
+            return dateB - dateA;
+        });
+
+        setOrders(uniqueOrders);
+
+    } catch (error) {
+        console.error("Error fetching all orders:", error);
+        toast.error('Failed to fetch orders.');
+    } finally {
+        setLoading(false);
+    }
+};
+  
   const updateOrderStatus = async (orderId, newStatus, sourcePath) => {
     if (!sourcePath) {
-        toast.error('Cannot update order: source path is unknown.');
+        toast.error('Cannot update order: source path is unknown. Please refresh.');
         return;
     }
     try {
       const orderRef = ref(database, `${sourcePath}/${orderId}`);
       await update(orderRef, { status: newStatus, updatedAt: new Date().toISOString() });
       toast.success(`Order status updated to ${newStatus}`);
+      fetchAllOrders();
     } catch (error) {
       console.error('Error updating order status:', error);
       toast.error(`Failed to update order status: ${error.message}`);
     }
+  };
+
+  const getOrderDate = (order) => {
+    if (order.createdAt) return new Date(order.createdAt).toLocaleString();
+    if (order.timestamp) return new Date(order.timestamp).toLocaleString();
+    
+    const idTimestamp = parseInt((order.id || '').split('_')[1]);
+    if (!isNaN(idTimestamp)) return new Date(idTimestamp).toLocaleString();
+
+    const dbOrderIdTimestamp = parseInt((order.dbOrderId || '').split('_')[1]);
+    if (!isNaN(dbOrderIdTimestamp)) return new Date(dbOrderIdTimestamp).toLocaleString();
+
+    return 'No date';
   };
 
   const formatCurrency = (amount) => {
@@ -122,8 +150,18 @@ const AdminOrders = () => {
       if (order.item) return [order.item];
       return [];
   }
+  
+  const getFormattedAddress = (order) => {
+    const source = (order.address && typeof order.address === 'object') ? order.address : order;
+    return [source.address1, source.address2, source.city, source.state, source.pincode].filter(Boolean).join(', ');
+  };
 
-  if (loading && orders.length === 0) {
+  const getCustomerDetail = (order, key) => {
+    const source = (order.address && typeof order.address === 'object') ? order.address : order;
+    return source[key] || order[key] || order.userName;
+  };
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -141,17 +179,19 @@ const AdminOrders = () => {
           <h1 className="text-3xl font-bold text-gray-900">All Orders</h1>
         </div>
 
-        {orders.length === 0 && !loading ? (
+        {orders.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <FiPackage className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-lg font-medium text-gray-900">No orders found</h3>
-            <p className="mt-1 text-sm text-gray-500">Listening for orders from all sources...</p>
+            <p className="mt-1 text-sm text-gray-500">There are no orders from any user.</p>
           </div>
         ) : (
           <div className="space-y-6">
             {orders.map((order) => {
                 const items = getOrderItems(order);
-                const orderIdDisplay = (order.dbOrderId || order.id || 'N/A').slice(-6).toUpperCase();
+                const orderIdDisplay = (order.id || 'N/A').slice(-6).toUpperCase();
+                const fullAddress = getFormattedAddress(order);
+
                 return (
               <div key={order.id} className="bg-white shadow overflow-hidden sm:rounded-lg">
                  <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
@@ -160,7 +200,7 @@ const AdminOrders = () => {
                       Order #{orderIdDisplay}
                     </h3>
                      <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                      {order.createdAt ? new Date(order.createdAt).toLocaleString() : 'No date'}
+                      {getOrderDate(order)}
                     </p>
                   </div>
                   <div>
@@ -177,16 +217,16 @@ const AdminOrders = () => {
                     <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                       <dt className="text-sm font-medium text-gray-500 flex items-center"><FiUser className="mr-2" /> Customer</dt>
                       <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        {order.address?.fullName || order.userName || 'N/A'}<br/>
+                        {getCustomerDetail(order, 'fullName') || 'N/A'}<br/>
                         <span className="text-gray-600">{order.userEmail || 'N/A'}</span><br/>
-                        <span className="text-gray-600">{order.address?.mobileNumber || 'N/A'}</span><br/>
+                        <span className="text-gray-600">{getCustomerDetail(order, 'mobileNumber') || 'N/A'}</span><br/>
                         <span className="text-xs text-gray-400 mt-1">User ID: {order.userId || 'N/A'}</span>
                       </dd>
                     </div>
                      <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                       <dt className="text-sm font-medium text-gray-500 flex items-center"><FiMapPin className="mr-2" /> Shipping Address</dt>
                       <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        {order.address ? `${order.address.address1 || ''}, ${order.address.city || ''}, ${order.address.state || ''}, ${order.address.pincode || ''}` : 'No address provided'}
+                        {fullAddress || 'No address provided'}
                       </dd>
                     </div>
                     <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -229,8 +269,7 @@ const AdminOrders = () => {
                    </div>
                 </div>
               </div>
-            )})
-          }
+            )})}
           </div>
         )}
       </div>

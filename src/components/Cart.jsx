@@ -17,18 +17,7 @@ const Cart = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
 
-  const loadRazorpay = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     const user = auth.currentUser;
     if (!user) {
       toast.info('Please log in to proceed to checkout.');
@@ -36,52 +25,10 @@ const Cart = () => {
       return;
     }
 
-    try {
-      setIsProcessing(true);
-      
-      if (!window.Razorpay) {
-        const loaded = await loadRazorpay();
-        if (!loaded) {
-          throw new Error('Failed to load Razorpay');
-        }
-      }
-
-      const amount = getCartTotal() * 100;
-      
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: amount.toString(),
-        currency: 'INR',
-        name: import.meta.env.VITE_RAZORPAY_COMPANY_NAME || 'Your Store Name',
-        description: 'Order Payment',
-        image: import.meta.env.VITE_RAZORPAY_COMPANY_LOGO,
-        handler: function () {
-          toast.success('Payment successful! Order placed.');
-          clearCart();
-        },
-        prefill: {
-          name: 'Customer Name',
-          email: 'customer@example.com',
-          contact: '+919876543210'
-        },
-        theme: {
-          color: '#4F46E5'
-        },
-        modal: {
-          ondismiss: function() {
-            toast.info('Payment was not completed');
-          }
-        }
-      };
-
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.open();
-      
-    } catch (error) {
-      console.error('Error initializing Razorpay:', error);
-      toast.error('Failed to initialize payment. Please try again.');
-    } finally {
-      setIsProcessing(false);
+    if (cartItems.length > 0) {
+      navigate('/address', { state: { item: cartItems, fromCart: true } });
+    } else {
+      toast.error('Your cart is empty.');
     }
   };
 
@@ -116,6 +63,7 @@ const Cart = () => {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Your Cart</h1>
             <button 
               onClick={clearCart}
               className="text-sm text-red-600 hover:text-red-800 p-2 rounded-md hover:bg-red-50"
@@ -192,11 +140,17 @@ const Cart = () => {
                 Shipping and taxes calculated at checkout.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Link 
+                  to="/items"
+                  className="flex-1 flex items-center justify-center px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Continue Shopping
+                </Link>
                 <button
                   onClick={handleCheckout}
                   disabled={isProcessing}
                   className={`flex-1 flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white ${
-                    isProcessing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-700'
+                    isProcessing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
                   }`}
                 >
                   {isProcessing ? (
