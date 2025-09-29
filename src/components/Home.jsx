@@ -35,11 +35,34 @@ const Home = () => {
         const snapshot = await get(productsRef);
         if (snapshot.exists()) {
           const allProducts = snapshot.val();
-          const recentProducts = Object.keys(allProducts).slice(-3).reduce((obj, key) => {
-            obj[key] = allProducts[key];
+          const productKeys = Object.keys(allProducts);
+          const recentProductKeys = productKeys.slice(-3);
+
+          const recentProductsWithDiscount = recentProductKeys.reduce((obj, key) => {
+            const product = allProducts[key];
+            const priceString = (product.price || '0').toString().replace('₹', '');
+            const discountedPrice = parseFloat(priceString);
+
+            let discountPercentage;
+            if (product.category === 'short-kurti') {
+              discountPercentage = Math.floor(30 + Math.random() * 11);
+            } else {
+              discountPercentage = Math.floor(35 + Math.random() * 16);
+            }
+
+            const originalPrice = Math.round(discountedPrice / (1 - (discountPercentage / 100)));
+
+            obj[key] = {
+              ...product,
+              id: key,
+              price: discountedPrice,
+              originalPrice: originalPrice,
+              discountPercentage: discountPercentage,
+            };
             return obj;
           }, {});
-          setProducts(recentProducts);
+
+          setProducts(recentProductsWithDiscount);
         }
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -236,7 +259,11 @@ const Home = () => {
                     </div>
                     <div className="p-4">
                       <h3 className="font-medium text-gray-900 mb-1">{product.name}</h3>
-                      <p className="text-indigo-600 font-semibold">₹{product.price}</p>
+                      <div className="flex items-center">
+                        <p className="text-lg font-semibold text-indigo-600">{`₹${product.price}`}</p>
+                        <p className="text-sm text-gray-500 line-through ml-2">{`₹${product.originalPrice}`}</p>
+                        <p className="text-xs font-bold text-green-600 ml-2">{`${product.discountPercentage}% OFF`}</p>
+                      </div>
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">{product.description}</p>
                     </div>
                   </Link>

@@ -34,10 +34,30 @@ const Details = () => {
         const snapshot = await get(ref(database, `products/${id}`));
         if (snapshot.exists()) {
           const data = snapshot.val();
-          setProduct(data);
+          
+          const priceString = (data.price || '0').toString().replace('₹', '');
+          const discountedPrice = parseFloat(priceString);
+          
+          let discountPercentage;
+          if (data.category === 'short-kurti') {
+            discountPercentage = Math.floor(30 + Math.random() * 11);
+          } else {
+            discountPercentage = Math.floor(35 + Math.random() * 16);
+          }
+          
+          const originalPrice = Math.round(discountedPrice / (1 - (discountPercentage / 100)));
+
+          const productWithDiscount = {
+            ...data,
+            price: discountedPrice,
+            originalPrice: originalPrice,
+            discountPercentage: discountPercentage,
+          };
+
+          setProduct(productWithDiscount);
           setSelectedSize(data.sizes?.[0] || '');
           setSelectedColor(data.colors?.[0] || '');
-          setEditData(data);
+          setEditData(productWithDiscount);
         } else {
           toast.error('Product not found!');
           navigate('/');
@@ -157,7 +177,11 @@ const Details = () => {
               ) : (
                 <div className="space-y-4">
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{product.name}</h1>
-                  <p className="text-2xl font-semibold text-indigo-600">₹{product.price}</p>
+                  <div className="flex items-center">
+                    <p className="text-2xl font-semibold text-indigo-600">{`₹${product.price}`}</p>
+                    <p className="text-lg text-gray-500 line-through ml-2">{`₹${product.originalPrice}`}</p>
+                    <p className="text-sm font-bold text-green-600 ml-2">{`${product.discountPercentage}% OFF`}</p>
+                  </div>
                   <p className="text-gray-600 text-sm sm:text-base">{product.description}</p>
                   
                   <div>
