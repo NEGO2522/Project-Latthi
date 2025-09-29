@@ -100,7 +100,7 @@ const Login = () => {
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 m-4">
         <div className="text-center mb-8">
         <Link to="/">
-          <img src="/assets/Logo.png" alt="LATHI Logo" className="mx-auto h-12 w-auto"/>
+          <img src={`${window.location.protocol}//${window.location.host}/assets/Logo.png`} alt="LATHI Logo" className="mx-auto h-12 w-auto"/>
         </Link>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Welcome Back
@@ -167,9 +167,9 @@ const Login = () => {
         <div className="mt-6 text-center text-xs text-gray-500">
           <p>
             By signing in, you agree to our{' '}
-            <Link to="/terms" className="font-medium text-indigo-600 hover:underline">Terms of Service</Link>
+            <Link to="/terms_conditions" className="font-medium text-indigo-600 hover:underline">Terms of Service</Link>
             {' and '}
-            <Link to="/privacy" className="font-medium text-indigo-600 hover:underline">Privacy Policy</Link>.
+            <Link to="/privacy_policy" className="font-medium text-indigo-600 hover:underline">Privacy Policy</Link>.
           </p>
         </div>
       </div>

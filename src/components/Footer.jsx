@@ -19,9 +19,9 @@ const Footer = () => {
       { name: 'Terms & Conditions', href: '/terms_conditions' },
     ],
     quickLinks: [
-        { name: 'All Items', href: '/items' },
-        { name: 'My Orders', href: '/orders' },
-        { name: 'My Cart', href: '/cart' },
+      { name: 'All Items', href: '/items' },
+      { name: 'My Orders', href: '/orders' },
+      { name: 'My Cart', href: '/cart' },
     ]
   };
 
@@ -29,24 +29,32 @@ const Footer = () => {
     <footer className="bg-white border-t border-gray-100">
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          
           <div className="col-span-1 md:col-span-1">
             <Link to="/" className="flex items-center space-x-2 mb-4">
-              <img src="/assets/Logo.png" alt="Lathi Logo" className="h-10 w-10 object-contain"/>
+              <img 
+                src={`${window.location.protocol}//${window.location.host}/assets/Logo.png`}
+                alt="Lathi Logo" 
+                className="h-10 w-10 object-contain"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/assets/placeholder.jpg';
+                }}
+              />
               <h1 className="text-2xl font-semibold text-gray-800" style={{ fontFamily: "'Great Vibes', cursive" }}>LATHI</h1>
             </Link>
             <p className="text-gray-500 text-sm">
               Elegance in every thread. Discover our exclusive collection of finely crafted kurtis.
             </p>
           </div>
-
           <div className="col-span-1 md:col-span-3 grid grid-cols-2 sm:grid-cols-3 gap-8">
             <div>
               <h4 className="font-semibold text-gray-800 mb-4">Support</h4>
               <ul className="space-y-3">
                 {footerLinks.support.map(link => (
                   <li key={link.name}>
-                    <Link to={link.href} className="text-gray-500 hover:text-indigo-600 transition-colors text-sm">{link.name}</Link>
+                    <Link to={link.href} className="text-gray-500 hover:text-indigo-600 transition-colors text-sm">
+                      {link.name}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -56,7 +64,9 @@ const Footer = () => {
               <ul className="space-y-3">
                 {footerLinks.legal.map(link => (
                   <li key={link.name}>
-                    <Link to={link.href} className="text-gray-500 hover:text-indigo-600 transition-colors text-sm">{link.name}</Link>
+                    <Link to={link.href} className="text-gray-500 hover:text-indigo-600 transition-colors text-sm">
+                      {link.name}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -66,13 +76,14 @@ const Footer = () => {
               <ul className="space-y-3">
                 {footerLinks.quickLinks.map(link => (
                   <li key={link.name}>
-                    <Link to={link.href} className="text-gray-500 hover:text-indigo-600 transition-colors text-sm">{link.name}</Link>
+                    <Link to={link.href} className="text-gray-500 hover:text-indigo-600 transition-colors text-sm">
+                      {link.name}
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
           </div>
-
         </div>
 
         <div className="mt-12 border-t border-gray-100 pt-8 flex flex-col sm:flex-row items-center justify-between">
@@ -81,7 +92,13 @@ const Footer = () => {
           </p>
           <div className="flex items-center space-x-4">
             {socialLinks.map((link, index) => (
-              <a key={index} href={link.href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-indigo-600 transition-colors">
+              <a 
+                key={index} 
+                href={link.href} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-gray-400 hover:text-indigo-600 transition-colors"
+              >
                 <span className="sr-only">{link.icon.type.displayName}</span>
                 {link.icon}
               </a>

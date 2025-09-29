@@ -130,29 +130,6 @@ const Details = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <header className="flex flex-wrap gap-y-4 justify-between items-center mb-6">
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            {isAdmin && (
-              <div className="flex items-center space-x-2">
-                <button onClick={toggleEdit} className={`flex items-center px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium ${isEditing ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                  {isEditing ? <><FiX className="mr-1" /> Cancel</> : <><FiEdit2 className="mr-1" /> Edit</>}
-                </button>
-                {isEditing && (
-                  <button onClick={handleSave} disabled={isSaving} className="flex items-center px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium bg-green-100 text-green-700 disabled:opacity-50">
-                    <FiSave className="mr-1" /> {isSaving ? 'Saving...' : 'Save'}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          <Link to="/cart" className="relative p-2 text-gray-700 hover:text-indigo-600">
-            <FiShoppingCart className="w-6 h-6" />
-            {getCartCount() > 0 && 
-              <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                {getCartCount()}
-              </span>}
-          </Link>
-        </header>
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 p-4 sm:p-6">

@@ -68,9 +68,13 @@ const Navbar = ({ user, isAdmin }) => {
               >
                 <Link to="/" className="flex items-center space-x-2">
                   <img 
-                    src="/assets/Logo.png" 
+                    src={`${window.location.protocol}//${window.location.host}/assets/Logo.png`} 
                     alt="Lathi Logo" 
                     className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/assets/placeholder.jpg';
+                    }}
                   />
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 tracking-wide" style={{ fontFamily: "'Great Vibes', cursive" }}>
                     LATHI

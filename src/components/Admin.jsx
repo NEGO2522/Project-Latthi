@@ -5,7 +5,7 @@ import { database, app } from '../firebase/firebase';
 import { toast } from 'react-toastify';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { FiBox, FiPlus, FiEdit, FiTrash2, FiHome, FiUsers, FiClipboard, FiMessageSquare, FiMenu, FiX } from 'react-icons/fi';
+import { FiBox, FiPlus, FiEdit, FiTrash2, FiHome, FiUsers, FiClipboard, FiMessageSquare, FiDollarSign, FiMenu, FiX } from 'react-icons/fi';
 import { AVAILABLE_SIZES, CATEGORIES } from '../constants';
 import { convertGoogleDriveLink } from '../utils/imageUtils';
 
@@ -208,7 +208,15 @@ const Admin = () => {
       <aside className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out w-64 bg-white shadow-lg p-4 flex-shrink-0 z-30 flex flex-col`}>
         <div className="flex items-center justify-between mb-8 lg:justify-center">
             <div className="flex items-center">
-                <img src="/assets/Logo.png" alt="Lathi Logo" className="h-10 w-10 mr-2"/>
+                <img 
+                  src={`${window.location.protocol}//${window.location.host}/assets/Logo.png`}
+                  alt="Lathi Logo" 
+                  className="h-10 w-10 mr-2 object-contain"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/assets/placeholder.jpg';
+                  }}
+                />
                 <h1 className="text-2xl font-bold text-gray-800">LATHI</h1>
             </div>
             <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-1 text-gray-600 hover:text-gray-800">
@@ -220,6 +228,7 @@ const Admin = () => {
             <SideNavLink to="/admin/orders" icon={<FiClipboard className="h-5 w-5" />}>Orders</SideNavLink>
             <SideNavLink to="/admin/subscribers" icon={<FiUsers className="h-5 w-5" />}>Subscribers</SideNavLink>
             <SideNavLink to="/admin/feedback" icon={<FiMessageSquare className="h-5 w-5" />}>Feedback</SideNavLink>
+            <SideNavLink to="/admin/refunds" icon={<FiDollarSign className="h-5 w-5" />}>Refunds</SideNavLink>
             <SideNavLink to="/" icon={<FiHome className="h-5 w-5" />}>Back to Home</SideNavLink>
         </nav>
       </aside>

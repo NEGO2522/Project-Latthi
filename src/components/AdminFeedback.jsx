@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { getDatabase, ref, onValue } from 'firebase/database';
+import { useNavigate } from 'react-router-dom';
+import { FiArrowLeft } from 'react-icons/fi';
 
 const AdminFeedback = () => {
+  const navigate = useNavigate();
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,12 +26,19 @@ const AdminFeedback = () => {
   }, []);
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">User Feedback</h1>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">User Feedback</h1>
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <table className="min-w-full leading-normal">
           <thead>
@@ -68,6 +78,7 @@ const AdminFeedback = () => {
             ))}
           </tbody>
         </table>
+      </div>
       </div>
     </div>
   );

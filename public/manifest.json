@@ -1,16 +1,35 @@
-
-      {
-        "name": "Lathi",
-        "short_name": "Lathi",
-        "start_url": ".",
-        "display": "standalone",
-        "background_color": "#fff",
-        "description": "Lathi is a fashion brand that offers a unique collection of kurtis for the modern woman.",
-        "icons": [
-          {
-           "src": "/vite.svg",
-           "type": "image/svg+xml",
-           "sizes": "any"
-         }
-       ]
-     }
+{
+  "name": "Lathi",
+  "short_name": "Lathi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "description": "Lathi is a fashion brand that offers a unique collection of kurtis for the modern woman.",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "48x48 72x72 96x96 128x128 256x256",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "serviceworker": {
+    "src": "/service-worker.js",
+    "scope": "/",
+    "type": "module"
+  }
+}

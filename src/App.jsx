@@ -17,6 +17,7 @@ import OrderPlaced from './components/Order_placed';
 import Delivery from './components/Delivery';
 import Admin from './components/Admin';
 import AdminOrders from './components/AdminOrders';
+import AdminRefunds from './components/AdminRefunds';
 import Subscribers from './components/Subscribers';
 import Shipping from './components/Shipping';
 import PrivacyPolicy from './components/Privacy_Policy';
@@ -114,6 +115,7 @@ function App() {
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/admin/new" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+              <Route path="/admin/refunds" element={<AdminRoute><AdminRefunds /></AdminRoute>} />
               <Route path="/admin/subscribers" element={<AdminRoute><Subscribers /></AdminRoute>} />
               <Route path="/admin/feedback" element={<AdminRoute><AdminFeedback /></AdminRoute>} />
               <Route path="/order-placed" element={<OrderPlaced />} />
