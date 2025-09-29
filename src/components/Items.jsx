@@ -45,17 +45,20 @@ const Items = ({ user, isAdmin }) => {
         if (data) {
           const productsArray = Object.entries(data).map(([id, product]) => {
             const priceString = (product.price || '0').toString().replace('₹', '');
-            const price = parseFloat(priceString);
-            const discountedPrice = price;
+            const discountedPrice = parseFloat(priceString);
             
-            let originalPrice;
+            // Define realistic discount percentages based on category
+            let discountPercentage;
             if (product.category === 'short-kurti') {
-              originalPrice = discountedPrice + 500;
+              // For short kurtis, use 30-40% discount
+              discountPercentage = Math.floor(30 + Math.random() * 11); // Random between 30-40%
             } else {
-              originalPrice = discountedPrice + 1000;
+              // For other categories, use 35-50% discount
+              discountPercentage = Math.floor(35 + Math.random() * 16); // Random between 35-50%
             }
-
-            const discountPercentage = Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+            
+            // Calculate original price based on discounted price and percentage
+            const originalPrice = Math.round(discountedPrice / (1 - (discountPercentage / 100)));
 
             return {
               id,
@@ -245,7 +248,7 @@ const Items = ({ user, isAdmin }) => {
           </div>
         </header>
 
-        <div className="md:flex md:gap-8 lg:gap-12">
+        <div className="md:flex md:gap-8 lg:gap-12 mt-6 md:mt-8">
           <aside className="hidden md:block w-64 flex-shrink-0">
             <CategorySidebar />
           </aside>
