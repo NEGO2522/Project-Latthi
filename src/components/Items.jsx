@@ -43,13 +43,30 @@ const Items = ({ user, isAdmin }) => {
       onValue(productsRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          const productsArray = Object.entries(data).map(([id, product]) => ({
-            id,
-            ...product,
-            image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/assets/placeholder.jpg',
-            price: product.price ? (typeof product.price === 'string' && !product.price.startsWith('₹') ? `₹${product.price}` : product.price) : '₹0',
-            category: product.category || 'Uncategorized',
-          }));
+          const productsArray = Object.entries(data).map(([id, product]) => {
+            const priceString = (product.price || '0').toString().replace('₹', '');
+            const price = parseFloat(priceString);
+            const discountedPrice = price;
+            
+            let originalPrice;
+            if (product.category === 'short-kurti') {
+              originalPrice = discountedPrice + 500;
+            } else {
+              originalPrice = discountedPrice + 1000;
+            }
+
+            const discountPercentage = Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+
+            return {
+              id,
+              ...product,
+              image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/assets/placeholder.jpg',
+              price: discountedPrice,
+              originalPrice: originalPrice,
+              discountPercentage: discountPercentage,
+              category: product.category || 'Uncategorized',
+            };
+          });
           setItems(productsArray);
         } else {
           setItems([]);
@@ -250,9 +267,17 @@ const Items = ({ user, isAdmin }) => {
                       </div>
                       <div className="p-4 flex-grow flex flex-col">
                         <h2 className="text-md font-bold text-gray-800 line-clamp-1 flex-grow pr-2 mb-2">{item.name}</h2>
-                        <p className="text-lg font-semibold text-indigo-600 mb-3">
-                          {item.price.toString().startsWith('₹') ? item.price : `₹${item.price}`}
-                        </p>
+                        <div className="flex items-center mb-3">
+                          <p className="text-lg font-semibold text-indigo-600">
+                            {`₹${item.price}`}
+                          </p>
+                          <p className="text-sm text-gray-500 line-through ml-2">
+                            {`₹${item.originalPrice}`}
+                          </p>
+                          <p className="text-xs font-bold text-green-600 ml-2">
+                            {`${item.discountPercentage}% OFF`}
+                          </p>
+                        </div>
                         <p className="text-sm text-gray-600 line-clamp-2 flex-grow mb-4">{item.description}</p>
                         <div className="mt-auto flex flex-col gap-2 pt-2 border-t border-gray-100">
                            <button 
