@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
-import { FiArrowLeft, FiShoppingCart, FiHeart, FiShare2, FiCheck, FiMinus, FiPlus, FiEdit2, FiSave, FiX, FiTrash2 } from 'react-icons/fi';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { FiShoppingCart, FiCheck, FiMinus, FiPlus } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { handleImageError, convertGoogleDriveLink } from '../utils/imageUtils';
 import { toast } from 'react-toastify';
+import Confetti from 'react-confetti';
 import { getAuth } from 'firebase/auth';
-import { ref, update, get } from 'firebase/database';
+import { ref, update, get, set } from 'firebase/database';
 import { database } from '../firebase/firebase';
+import { referralCodes } from './ReferralCode';
 
 const Details = () => {
   const [product, setProduct] = useState(null);
@@ -16,15 +18,14 @@ const Details = () => {
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({});
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  
+  const [referralCode, setReferralCode] = useState('');
+  const [referralApplied, setReferralApplied] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const { addToCart, getCartCount } = useCart();
+  const { addToCart } = useCart();
   const auth = getAuth();
 
   useEffect(() => {
@@ -34,7 +35,6 @@ const Details = () => {
         const snapshot = await get(ref(database, `products/${id}`));
         if (snapshot.exists()) {
           const data = snapshot.val();
-          
           const priceString = (data.price || '0').toString().replace('₹', '');
           const discountedPrice = parseFloat(priceString);
           
@@ -57,7 +57,6 @@ const Details = () => {
           setProduct(productWithDiscount);
           setSelectedSize(data.sizes?.[0] || '');
           setSelectedColor(data.colors?.[0] || '');
-          setEditData(productWithDiscount);
         } else {
           toast.error('Product not found!');
           navigate('/');
@@ -71,39 +70,30 @@ const Details = () => {
     };
 
     fetchProduct();
+  }, [id, navigate]);
 
-    const user = auth.currentUser;
-    if (user) {
-      const adminEmail = user.email?.toLowerCase();
-      setIsAdmin(adminEmail?.endsWith('@admin.com') || adminEmail === 'cottonfab0001@gmail.com');
+  const handleApplyReferral = async () => {
+    if (!referralCode) {
+      toast.warn('Please enter a referral code.');
+      return;
     }
-  }, [id, navigate, auth]);
 
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await update(ref(database, `products/${id}`), editData);
-      setProduct(prev => ({ ...prev, ...editData }));
-      setIsEditing(false);
-      toast.success('Product updated successfully!');
-    } catch (error) {
-      console.error('Error updating product:', error);
-      toast.error('Failed to update product');
-    } finally {
-      setIsSaving(false);
+    if (referralCodes.includes(referralCode)) {
+      const usedCodeRef = ref(database, `usedReferralCodes/${referralCode}`);
+      const snapshot = await get(usedCodeRef);
+
+      if (snapshot.exists()) {
+        toast.error('This referral code has already been used.');
+      } else {
+        setReferralApplied(true);
+        setShowConfetti(true);
+        toast.success('Congratulations! You get a 10% discount!');
+        await set(usedCodeRef, true);
+        setTimeout(() => setShowConfetti(false), 5000); // Stop confetti after 5 seconds
+      }
+    } else {
+      toast.error('Invalid referral code.');
     }
-  };
-  
-  const toggleEdit = () => {
-    if (isEditing) {
-      setEditData(product); // Reset changes if canceling
-    }
-    setIsEditing(!isEditing);
   };
 
   const handleAddToCart = () => {
@@ -140,100 +130,117 @@ const Details = () => {
       toast.warn('Please select a size and color.');
       return;
     }
-    const itemToPurchase = { ...product, id, size: selectedSize, color: selectedColor, quantity };
+    const itemToPurchase = { ...product, id, size: selectedSize, color: selectedColor, quantity, referralApplied };
     navigate('/adress', { state: { item: itemToPurchase } });
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   if (!product) return <div className="flex items-center justify-center min-h-screen">Product not found.</div>;
 
+  const finalPrice = referralApplied ? product.price * 0.9 : product.price;
+
   return (
     <div className="min-h-screen bg-gray-50 py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+      {showConfetti && <Confetti />}
       <div className="max-w-7xl mx-auto">
-
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 p-4 sm:p-6">
             <div className="space-y-4">
               <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-100">
-                <img src={convertGoogleDriveLink(editData.images?.[selectedImageIndex] || '')} alt={editData.name} className="h-full w-full object-cover object-center" onError={handleImageError} />
+                <img src={convertGoogleDriveLink(product.images?.[selectedImageIndex] || '')} alt={product.name} className="h-full w-full object-cover object-center" onError={handleImageError} />
               </div>
               <div className="grid grid-cols-4 gap-2">
-                {editData.images?.map((image, index) => (
+                {product.images?.map((image, index) => (
                   <button key={index} type="button" onClick={() => setSelectedImageIndex(index)} className={`block overflow-hidden rounded-lg border ${selectedImageIndex === index ? 'ring-2 ring-indigo-500' : 'border-gray-200'}`}>
-                    <img src={convertGoogleDriveLink(image)} alt={`${editData.name} ${index + 1}`} className="h-20 w-full object-cover" onError={handleImageError} />
+                    <img src={convertGoogleDriveLink(image)} alt={`${product.name} ${index + 1}`} className="h-20 w-full object-cover" onError={handleImageError} />
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="py-2">
-              {isEditing ? (
-                <div className="space-y-4 text-sm">
-                  <input name="name" value={editData.name} onChange={handleEditChange} placeholder="Product Name" className="w-full input-field" />
-                  <input name="price" value={editData.price} onChange={handleEditChange} placeholder="Price" className="w-full input-field" />
-                  <textarea name="description" value={editData.description} onChange={handleEditChange} placeholder="Description" rows="4" className="w-full input-field" />
-                  {/* More fields... */}
+              <div className="space-y-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{product.name}</h1>
+                <div className="flex items-center">
+                  <p className="text-2xl font-semibold text-indigo-600">{`₹${finalPrice.toFixed(2)}`}</p>
+                  <p className="text-lg text-gray-500 line-through ml-2">{`₹${product.originalPrice}`}</p>
+                  <p className="text-sm font-bold text-green-600 ml-2">{`${product.discountPercentage}% OFF`}</p>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{product.name}</h1>
-                  <div className="flex items-center">
-                    <p className="text-2xl font-semibold text-indigo-600">{`₹${product.price}`}</p>
-                    <p className="text-lg text-gray-500 line-through ml-2">{`₹${product.originalPrice}`}</p>
-                    <p className="text-sm font-bold text-green-600 ml-2">{`${product.discountPercentage}% OFF`}</p>
-                  </div>
-                  <p className="text-gray-600 text-sm sm:text-base">{product.description}</p>
-                  
+                <p className="text-gray-600 text-sm sm:text-base">{product.description}</p>
+                
+                <div>
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">Select Size</h3>
+                    <div className="flex flex-wrap gap-2">
+                        {product.sizes.map(size => (
+                            <button key={size} onClick={() => setSelectedSize(size)} className={`px-4 py-2 text-sm border rounded-md ${selectedSize === size ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}>
+                                {size}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {product.colors && product.colors.length > 0 && (
                   <div>
-                      <h3 className="text-sm font-medium text-gray-900 mb-2">Select Size</h3>
+                      <h3 className="text-sm font-medium text-gray-900 mb-2">Select Color</h3>
                       <div className="flex flex-wrap gap-2">
-                          {product.sizes.map(size => (
-                              <button key={size} onClick={() => setSelectedSize(size)} className={`px-4 py-2 text-sm border rounded-md ${selectedSize === size ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}>
-                                  {size}
+                          {product.colors.map(color => (
+                              <button key={color} onClick={() => setSelectedColor(color)} className={`px-4 py-2 text-sm border rounded-md ${selectedColor === color ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}>
+                                  {color}
                               </button>
                           ))}
                       </div>
                   </div>
+                )}
 
-                  {product.colors && product.colors.length > 0 && (
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-900 mb-2">Select Color</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {product.colors.map(color => (
-                                <button key={color} onClick={() => setSelectedColor(color)} className={`px-4 py-2 text-sm border rounded-md ${selectedColor === color ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}>
-                                    {color}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">Quantity</h3>
-                    <div className="flex items-center border rounded-md w-fit">
-                        <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-600"><FiMinus/></button>
-                        <span className="px-4 py-2 w-12 text-center">{quantity}</span>
-                        <button onClick={() => setQuantity(q => q + 1)} className="px-3 py-2 text-gray-600"><FiPlus/></button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                      <button onClick={handleAddToCart} disabled={isAdding} className="flex-1 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1">
-                          {isAdding ? <FiCheck className="mr-2"/> : <FiShoppingCart className="mr-2"/>} 
-                          {isAdding ? 'Added!' : 'Add to Cart'}
-                      </button>
-                      <button onClick={handleBuyNow} className="flex-1 flex items-center justify-center bg-transparent hover:bg-indigo-600 text-indigo-700 font-semibold hover:text-white py-3 px-6 border border-indigo-500 hover:border-transparent rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1">
-                          Buy Now
-                      </button>
-                  </div>
-
-                  <div className="space-y-3 pt-4 text-sm text-gray-600">
-                    {product.features && <div className="flex items-start"><FiCheck className="w-4 h-4 mr-2 mt-1 text-green-500"/><span>{product.features.join(', ')}</span></div>}
-                    {product.fabric && <div className="flex items-start"><FiCheck className="w-4 h-4 mr-2 mt-1 text-green-500"/><span>Fabric: {product.fabric}</span></div>}
-                    {product.careInstructions && <div className="flex items-start"><FiCheck className="w-4 h-4 mr-2 mt-1 text-green-500"/><span>Care: {product.careInstructions.join(', ')}</span></div>}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">Quantity</h3>
+                  <div className="flex items-center border rounded-md w-fit">
+                      <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-2 text-gray-600"><FiMinus/></button>
+                      <span className="px-4 py-2 w-12 text-center">{quantity}</span>
+                      <button onClick={() => setQuantity(q => q + 1)} className="px-3 py-2 text-gray-600"><FiPlus/></button>
                   </div>
                 </div>
-              )}
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">Referral Code</h3>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value)}
+                      placeholder="Enter referral code"
+                      className="flex-grow px-3 py-2 text-sm border rounded-md border-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      disabled={referralApplied}
+                    />
+                    <button
+                      onClick={handleApplyReferral}
+                      disabled={referralApplied || !referralCode}
+                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {referralApplied ? 'Applied' : 'Apply'}
+                    </button>
+                  </div>
+                  {referralApplied && (
+                    <p className="text-green-600 text-sm mt-1">Congratulations! You get a 10% discount!</p>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                    <button onClick={handleAddToCart} disabled={isAdding} className="flex-1 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1">
+                        {isAdding ? <FiCheck className="mr-2"/> : <FiShoppingCart className="mr-2"/>} 
+                        {isAdding ? 'Added!' : 'Add to Cart'}
+                    </button>
+                    <button onClick={handleBuyNow} className="flex-1 flex items-center justify-center bg-transparent hover:bg-indigo-600 text-indigo-700 font-semibold hover:text-white py-3 px-6 border border-indigo-500 hover:border-transparent rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1">
+                        Buy Now
+                    </button>
+                </div>
+
+                <div className="space-y-3 pt-4 text-sm text-gray-600">
+                  {product.features && <div className="flex items-start"><FiCheck className="w-4 h-4 mr-2 mt-1 text-green-500"/><span>{product.features.join(', ')}</span></div>}
+                  {product.fabric && <div className="flex items-start"><FiCheck className="w-4 h-4 mr-2 mt-1 text-green-500"/><span>Fabric: {product.fabric}</span></div>}
+                  {product.careInstructions && <div className="flex items-start"><FiCheck className="w-4 h-4 mr-2 mt-1 text-green-500"/><span>Care: {product.careInstructions.join(', ')}</span></div>}
+                </div>
+              </div>
             </div>
           </div>
         </div>

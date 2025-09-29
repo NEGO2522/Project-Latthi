@@ -6,7 +6,7 @@ import { FiPackage, FiTruck, FiCheckCircle, FiDollarSign, FiArrowRight, FiClock,
 import { toast } from 'react-toastify';
 
 const Delivery = () => {
-  const { orderId } = useParams(); // <-- THIS IS THE FIX: Reads orderId from URL
+  const { orderId } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isRequestingRefund, setIsRequestingRefund] = useState(false);
@@ -26,34 +26,36 @@ const Delivery = () => {
       return;
     }
 
-    // Path to the user's specific order
     const userOrderRef = ref(database, `users/${user.uid}/orders/${orderId}`);
-    // Also listen to the allOrders node for admin updates
     const allOrdersRef = ref(database, `allOrders/${orderId}`);
     setLoading(true);
 
     const handleOrderUpdate = (snapshot, source) => {
       if (snapshot.exists()) {
         const orderData = { id: snapshot.key, ...snapshot.val() };
-        setOrder(prevOrder => ({
-          ...prevOrder,
-          ...orderData,
-          // Preserve existing refundRequest if not present in the update
-          refundRequest: orderData.refundRequest || (prevOrder?.refundRequest || null)
-        }));
-        
-        // Show a toast when refund status changes
-        if (source === 'allOrders' && 
-            orderData.refundRequest?.status && 
-            prevOrder?.refundRequest?.status !== orderData.refundRequest.status) {
-          toast.info(`Refund status updated: ${orderData.refundRequest.status}`, {
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true
-          });
-        }
+
+        setOrder(prevOrder => {
+          // Show a toast when refund status changes
+          if (source === 'allOrders' &&
+              orderData.refundRequest?.status &&
+              prevOrder?.refundRequest?.status !== orderData.refundRequest.status) {
+            toast.info(`Refund status updated: ${orderData.refundRequest.status}`, {
+              autoClose: 5000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true
+            });
+          }
+
+          return {
+            ...prevOrder,
+            ...orderData,
+            // Preserve existing refundRequest if not present in the update
+            refundRequest: orderData.refundRequest || (prevOrder?.refundRequest || null)
+          };
+        });
+
       } else if (source === 'userOrder') {
         // Only show not found if it's the user's order that's missing
         toast.error('Order not found.');
@@ -68,7 +70,6 @@ const Delivery = () => {
       setLoading(false);
     };
 
-    // Set up listeners for both user's order and allOrders
     const unsubscribeUserOrder = onValue(userOrderRef, 
       (snapshot) => handleOrderUpdate(snapshot, 'userOrder'),
       handleError
@@ -79,7 +80,6 @@ const Delivery = () => {
       handleError
     );
 
-    // Cleanup function to unsubscribe from both listeners
     return () => {
       unsubscribeUserOrder();
       unsubscribeAllOrders();
@@ -121,7 +121,6 @@ const Delivery = () => {
         amount: order.total || 0
       };
 
-      // Also update the allOrders node if needed
       updates[`allOrders/${orderId}/refundRequest`] = {
         requestedAt: new Date().toISOString(),
         reason: refundReason,
@@ -132,7 +131,6 @@ const Delivery = () => {
 
       await update(ref(database), updates);
       
-      // Update local state
       setOrder(prev => ({
         ...prev,
         refundRequest: {
@@ -152,14 +150,11 @@ const Delivery = () => {
     }
   };
 
-  // Check if refund can be requested
   const canRequestRefund = () => {
     if (!order) return false;
     
-    // Don't show if already has a refund request
     if (order.refundRequest) return false;
     
-    // Only allow refund requests for delivered or cancelled orders within 30 days
     const orderDate = order.createdAt ? new Date(order.createdAt) : new Date();
     const daysSinceOrder = (new Date() - orderDate) / (1000 * 60 * 60 * 24);
     return (order.status === 'delivered' || order.status === 'cancelled') && daysSinceOrder <= 30;
@@ -198,12 +193,10 @@ const Delivery = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg overflow-hidden md:max-w-2xl">
         <div className="p-8">
-          {/* Header with Order Info */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-gray-900 mb-1">Order Tracking</h1>
             <p className="text-gray-600">Order #{(order.dbOrderId || order.id).slice(-6).toUpperCase()}</p>
             
-            {/* Refund Status Section */}
             {order.refundRequest && (
               <div className="mt-6 mb-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-3">Refund Status</h3>
@@ -255,14 +248,10 @@ const Delivery = () => {
             )}
           </div>
 
-          {/* Order Status Timeline */}
           <div className="relative">
-            {/* Progress Line */}
             <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gray-200"></div>
 
-            {/* Status Steps */}
             <div className="space-y-8">
-              {/* Step 1: Processing */}
               <div className="flex items-center">
                 <div className={`z-10 flex items-center justify-center h-8 w-8 rounded-full ${statusStep >= 1 ? 'bg-indigo-600' : 'bg-gray-300'}`}>
                   <FiPackage className="h-5 w-5 text-white" />
@@ -273,7 +262,6 @@ const Delivery = () => {
                 </div>
               </div>
 
-              {/* Step 2: Shipped */}
               <div className="flex items-center">
                 <div className={`z-10 flex items-center justify-center h-8 w-8 rounded-full ${statusStep >= 2 ? 'bg-indigo-600' : 'bg-gray-300'}`}>
                   <FiTruck className="h-5 w-5 text-white" />
@@ -284,7 +272,6 @@ const Delivery = () => {
                 </div>
               </div>
 
-              {/* Step 3: Delivered */}
               <div className="flex items-center">
                 <div className={`z-10 flex items-center justify-center h-8 w-8 rounded-full ${statusStep >= 3 ? 'bg-green-600' : 'bg-gray-300'}`}>
                   <FiCheckCircle className="h-5 w-5 text-white" />
@@ -297,7 +284,6 @@ const Delivery = () => {
             </div>
           </div>
           
-          {/* Refund Request Button at Bottom */}
           {canRequestRefund() && (
             <div className="mt-8 pt-6 border-t border-gray-200">
               <button
@@ -312,7 +298,6 @@ const Delivery = () => {
         </div>
       </div>
 
-      {/* Refund Request Modal - Centered */}
       <div id="refundModal" className="fixed inset-0 z-50 hidden overflow-y-auto">
         <div className="flex min-h-screen items-center justify-center p-4 text-center">
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => document.getElementById('refundModal').classList.add('hidden')}></div>
@@ -352,7 +337,6 @@ const Delivery = () => {
         </div>
       </div>
 
-      {/* Delivery Information - Matches order tracking width on desktop */}
       <div className="max-w-md mx-auto mt-8 p-6 bg-indigo-50 rounded-lg border border-indigo-100 md:max-w-2xl">
         <div className="flex items-start">
           <FiClock className="text-indigo-600 mt-1 mr-3 flex-shrink-0" size={20} />

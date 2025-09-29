@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { FaMapMarkerAlt, FaEnvelope, FaHome, FaFacebook, FaInstagram, FaShippingFast, FaUserSecret, FaFileContract, FaUndo } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaEnvelope, FaFacebook, FaInstagram, FaShippingFast, FaUserSecret, FaFileContract, FaUndo } from 'react-icons/fa';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
@@ -57,18 +57,6 @@ const ContactUs = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <motion.button
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          onClick={() => navigate(-1)}
-          className="mb-8 flex items-center text-indigo-600 hover:text-indigo-800 transition-colors duration-200 text-sm sm:text-base group"
-          aria-label="Go back"
-        >
-          <FaHome className="w-5 h-5 mr-2 transition-transform duration-200 group-hover:-translate-x-1" />
-          <span className="font-medium">Back to Home</span>
-        </motion.button>
-
         <div className="space-y-8">
           {/* Contact Information */}
           <motion.div
