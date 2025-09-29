@@ -100,7 +100,7 @@ const Login = () => {
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 m-4">
         <div className="text-center mb-8">
         <Link to="/">
-          <img src="/assets/Logo.png" alt="LATHI Logo" className="mx-auto h-12 w-auto"/>
+          <img src={`${window.location.protocol}//${window.location.host}/assets/Logo.png`} alt="LATHI Logo" className="mx-auto h-12 w-auto"/>
         </Link>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Welcome Back

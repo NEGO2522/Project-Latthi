@@ -47,7 +47,7 @@ const Items = ({ user, isAdmin }) => {
             id,
             ...product,
             image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/assets/placeholder.jpg',
-            price: typeof product.price === 'number' ? `₹${product.price}` : product.price || '₹0',
+            price: product.price ? (typeof product.price === 'string' && !product.price.startsWith('₹') ? `₹${product.price}` : product.price) : '₹0',
             category: product.category || 'Uncategorized',
           }));
           setItems(productsArray);
@@ -182,14 +182,50 @@ const Items = ({ user, isAdmin }) => {
         )}
       </AnimatePresence>
 
-      <div className="max-w-screen-2xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 md:mt-8">
-        <header className="flex justify-between items-center mb-6 sm:mb-8 md:hidden">
-          <button onClick={toggleMenu} className="p-2 rounded-lg bg-white shadow-sm" aria-label="Open menu"><FiMenu className="text-gray-800"/></button>
-          <h1 className="text-xl font-bold text-gray-800">Our Collection</h1>
-          <Link to="/cart" className="relative p-2 rounded-lg bg-white shadow-sm">
-            <FiShoppingCart className="text-gray-800"/>
-            {getCartCount() > 0 && <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">{getCartCount()}</span>}
-          </Link>
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 pt-4 pb-1 sm:pt-6 sm:pb-2">
+        <header className="relative flex items-center justify-between mb-4 sm:mb-6 md:hidden">
+          {/* Mobile Menu Button */}
+          <div className="flex-1 flex justify-start">
+            <button 
+              onClick={toggleMenu} 
+              className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
+              aria-label="Open menu"
+            >
+              <FiMenu size={24} />
+            </button>
+          </div>
+
+          {/* Logo - Centered */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="flex items-center space-x-2">
+              <Link to="/" className="flex items-center">
+                <img 
+                  src={`${window.location.protocol}//${window.location.host}/assets/Logo.png`}
+                  alt="Lathi Logo" 
+                  className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/assets/placeholder.jpg';
+                  }}
+                />
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 tracking-wide ml-2" style={{ fontFamily: "'Great Vibes', cursive" }}>
+                  LATHI
+                </h1>
+              </Link>
+            </div>
+          </div>
+
+          {/* Cart Icon */}
+          <div className="flex-1 flex justify-end">
+            <Link to="/cart" className="p-2 text-gray-600 hover:text-gray-900 relative">
+              <FiShoppingCart size={24} />
+              {getCartCount() > 0 && (
+                <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                  {getCartCount()}
+                </span>
+              )}
+            </Link>
+          </div>
         </header>
 
         <div className="md:flex md:gap-8 lg:gap-12">
@@ -214,7 +250,9 @@ const Items = ({ user, isAdmin }) => {
                       </div>
                       <div className="p-4 flex-grow flex flex-col">
                         <h2 className="text-md font-bold text-gray-800 line-clamp-1 flex-grow pr-2 mb-2">{item.name}</h2>
-                        <p className="text-lg font-semibold text-indigo-600 mb-3">{item.price}</p>
+                        <p className="text-lg font-semibold text-indigo-600 mb-3">
+                          {item.price.toString().startsWith('₹') ? item.price : `₹${item.price}`}
+                        </p>
                         <p className="text-sm text-gray-600 line-clamp-2 flex-grow mb-4">{item.description}</p>
                         <div className="mt-auto flex flex-col gap-2 pt-2 border-t border-gray-100">
                            <button 
@@ -241,7 +279,21 @@ const Items = ({ user, isAdmin }) => {
                            >
                              <FiShoppingCart className="mr-2" />Add to Cart
                            </button>
-                           <button onClick={(e) => { e.stopPropagation(); navigate('/adress', { state: { item: { ...item, quantity: 1 } } }); }} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-lg text-sm font-bold transition-colors">Buy Now</button>
+                           <button 
+                            onClick={(e) => { 
+                              e.stopPropagation();
+                              const user = auth.currentUser;
+                              if (!user) {
+                                toast.info('Please log in to proceed with your purchase.');
+                                navigate('/login', { state: { from: location } });
+                                return;
+                              }
+                              navigate('/adress', { state: { item: { ...item, quantity: 1 } } }); 
+                            }} 
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-lg text-sm font-bold transition-colors"
+                          >
+                            Buy Now
+                          </button>
                         </div>
                       </div>
                     </div>

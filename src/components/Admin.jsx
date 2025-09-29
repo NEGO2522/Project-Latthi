@@ -208,7 +208,15 @@ const Admin = () => {
       <aside className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out w-64 bg-white shadow-lg p-4 flex-shrink-0 z-30 flex flex-col`}>
         <div className="flex items-center justify-between mb-8 lg:justify-center">
             <div className="flex items-center">
-                <img src="/assets/Logo.png" alt="Lathi Logo" className="h-10 w-10 mr-2"/>
+                <img 
+                  src={`${window.location.protocol}//${window.location.host}/assets/Logo.png`}
+                  alt="Lathi Logo" 
+                  className="h-10 w-10 mr-2 object-contain"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/assets/placeholder.jpg';
+                  }}
+                />
                 <h1 className="text-2xl font-bold text-gray-800">LATHI</h1>
             </div>
             <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-1 text-gray-600 hover:text-gray-800">

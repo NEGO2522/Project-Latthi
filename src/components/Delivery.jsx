@@ -351,6 +351,19 @@ const Delivery = () => {
           </div>
         </div>
       </div>
+
+      {/* Delivery Information - Matches order tracking width on desktop */}
+      <div className="max-w-md mx-auto mt-8 p-6 bg-indigo-50 rounded-lg border border-indigo-100 md:max-w-2xl">
+        <div className="flex items-start">
+          <FiClock className="text-indigo-600 mt-1 mr-3 flex-shrink-0" size={20} />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Delivery Information</h3>
+            <p className="text-gray-700">
+              Your order will be delivered within 7 working days from the date of order confirmation.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
