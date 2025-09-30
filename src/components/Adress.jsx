@@ -5,7 +5,7 @@ import { FiMapPin, FiCreditCard, FiCheckCircle, FiHome, FiMail, FiPhone, FiLoade
 import { toast } from 'react-toastify';
 import { handleImageError } from '../utils/imageUtils';
 import { auth, database, ref, push, set } from '../firebase/firebase';
-import { CartContext } from '../contexts/CartContext';
+import { CartContext } from '../hooks/useCart';
 
 const Adress = () => {
   const navigate = useNavigate();

@@ -150,7 +150,7 @@ const Cart = () => {
                   onClick={handleCheckout}
                   disabled={isProcessing}
                   className={`flex-1 flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white ${
-                    isProcessing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+                    isProcessing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
                   }`}
                 >
                   {isProcessing ? (
