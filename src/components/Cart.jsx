@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiShoppingBag, FiTrash2, FiMinus, FiPlus, FiLoader } from 'react-icons/fi';
+import { FiShoppingBag, FiTrash2, FiMinus, FiPlus, FiLoader, FiCheck } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { toast } from 'react-toastify';
 import { auth } from '../firebase/firebase';
+import { ref, get, set } from 'firebase/database';
+import { database } from '../firebase/firebase';
+import Confetti from 'react-confetti';
+import { referralCodes } from './ReferralCode';
 
 const Cart = () => {
   const { 
@@ -15,7 +19,34 @@ const Cart = () => {
   } = useCart();
   
   const [isProcessing, setIsProcessing] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+  const [referralApplied, setReferralApplied] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const navigate = useNavigate();
+
+  const handleApplyReferral = async () => {
+    if (!referralCode) {
+      toast.warn('Please enter a redeem code.');
+      return;
+    }
+
+    if (referralCodes.includes(referralCode)) {
+      const usedCodeRef = ref(database, `usedReferralCodes/${referralCode}`);
+      const snapshot = await get(usedCodeRef);
+
+      if (snapshot.exists()) {
+        toast.error('This redeem code has already been used.');
+      } else {
+        setReferralApplied(true);
+        setShowConfetti(true);
+        toast.success('Congratulations! You get a 10% discount on your order!');
+        await set(usedCodeRef, true);
+        setTimeout(() => setShowConfetti(false), 5000);
+      }
+    } else {
+      toast.error('Invalid redeem code.');
+    }
+  };
 
   const handleCheckout = () => {
     const user = auth.currentUser;
@@ -26,10 +57,21 @@ const Cart = () => {
     }
 
     if (cartItems.length > 0) {
-      navigate('/address', { state: { items: cartItems, fromCart: true } });
+      navigate('/address', { 
+        state: { 
+          items: cartItems, 
+          fromCart: true,
+          referralApplied
+        } 
+      });
     } else {
       toast.error('Your cart is empty.');
     }
+  };
+
+  const getDiscountedTotal = () => {
+    const subtotal = getCartTotal();
+    return referralApplied ? subtotal * 0.9 : subtotal;
   };
 
   const handleQuantityChange = (itemId, size, newQuantity) => {
@@ -145,13 +187,51 @@ const Cart = () => {
             </div>
 
             <div className="border-t border-gray-200 p-4 sm:p-6">
-              <div className="flex justify-between text-base font-medium text-gray-900 mb-4">
-                <p>Subtotal ({cartItems.reduce((total, item) => total + item.quantity, 0)} items)</p>
-                <p>₹{getCartTotal().toFixed(2)}</p>
+              <div className="space-y-4">
+                <div className="flex justify-between text-base text-gray-900">
+                  <p>Subtotal ({cartItems.reduce((total, item) => total + item.quantity, 0)} items)</p>
+                  <p>₹{getCartTotal().toFixed(2)}</p>
+                </div>
+
+                {referralApplied && (
+                  <div className="flex justify-between text-base text-green-600">
+                    <p>Discount (10% off)</p>
+                    <p>-₹{(getCartTotal() * 0.1).toFixed(2)}</p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                    placeholder="Enter redeem code"
+                    className="flex-grow px-3 py-2 text-sm border rounded-md border-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    disabled={referralApplied}
+                  />
+                  <button
+                    onClick={handleApplyReferral}
+                    disabled={referralApplied || !referralCode}
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    {referralApplied ? 'Applied' : 'Apply'}
+                  </button>
+                </div>
+                {referralApplied && (
+                  <p className="text-green-600 text-sm -mt-3 mb-2">
+                    <FiCheck className="inline mr-1" /> Coupon applied successfully!
+                  </p>
+                )}
+
+                <div className="flex justify-between text-lg font-semibold text-gray-900 border-t border-gray-200 pt-4">
+                  <p>Total</p>
+                  <p>₹{getDiscountedTotal().toFixed(2)}</p>
+                </div>
               </div>
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="text-sm text-gray-500 mt-4">
                 Shipping and taxes calculated at checkout.
               </p>
+              {showConfetti && <Confetti recycle={false} numberOfPieces={200} />}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Link 
                   to="/items"
