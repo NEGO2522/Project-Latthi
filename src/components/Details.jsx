@@ -74,7 +74,7 @@ const Details = () => {
 
   const handleApplyReferral = async () => {
     if (!referralCode) {
-      toast.warn('Please enter a referral code.');
+      toast.warn('Please enter a redeem code.');
       return;
     }
 
@@ -83,7 +83,7 @@ const Details = () => {
       const snapshot = await get(usedCodeRef);
 
       if (snapshot.exists()) {
-        toast.error('This referral code has already been used.');
+        toast.error('This redeem code has already been used.');
       } else {
         setReferralApplied(true);
         setShowConfetti(true);
@@ -92,7 +92,7 @@ const Details = () => {
         setTimeout(() => setShowConfetti(false), 5000); // Stop confetti after 5 seconds
       }
     } else {
-      toast.error('Invalid referral code.');
+      toast.error('Invalid redeem code.');
     }
   };
 
@@ -202,13 +202,13 @@ const Details = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 mb-2">Referral Code</h3>
+                  <h3 className="text-sm font-medium text-gray-900 mb-2">Redeem Code</h3>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value)}
-                      placeholder="Enter referral code"
+                      placeholder="Enter redeem code"
                       className="flex-grow px-3 py-2 text-sm border rounded-md border-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       disabled={referralApplied}
                     />

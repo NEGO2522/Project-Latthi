@@ -43,11 +43,12 @@ const Adress = () => {
     if (state?.items || state?.item) {
       setItems(state.items || [state.item]);
       setIsLoading(false);
-    } else if (!items && !isLoading) {
-      // Only show error and navigate if we're not in the initial loading state
+    } else if (!state && !isLoading) {
+      // Only show error and navigate if we're not in the initial loading state and no state is provided
       toast.error('No products selected. Please add items to your cart first.');
+      navigate('/');
     }
-  }, [state, navigate, items, isLoading, isCartCheckout]);
+  }, [state, navigate, isLoading]);
 
   const indianStates = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -302,6 +303,28 @@ const Adress = () => {
 
   return (
     <div className="min-h-screen bg-white pt-2">
+        {/* Mobile Header with Logo */}
+        <div className="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3">
+          <button 
+            onClick={() => navigate('/')}
+            className="flex items-center"
+          >
+            <img 
+              src="/assets/Logo.png" 
+              alt="Lathi Logo" 
+              className="h-8 w-auto"
+              onError={handleImageError}
+            />
+            <span className="ml-2 text-xl font-semibold">Lathi</span>
+          </button>
+          <button 
+            onClick={() => navigate(-1)}
+            className="p-2 text-gray-600 hover:text-gray-900"
+          >
+            <FiArrowLeft className="w-5 h-5" />
+          </button>
+        </div>
+
         <div className="container mx-auto px-4 sm:px-6 md:px-8 pt-6">
             <div
             initial={{ opacity: 0, y: -10 }}
