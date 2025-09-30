@@ -131,7 +131,7 @@ const Details = () => {
       return;
     }
     const itemToPurchase = { ...product, id, size: selectedSize, color: selectedColor, quantity, referralApplied };
-    navigate('/adress', { state: { item: itemToPurchase } });
+    navigate('/address', { state: { item: itemToPurchase } });
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;

@@ -111,7 +111,7 @@ function App() {
               <Route path="/delivery/:orderId" element={<Delivery />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<Orders />} />
-              <Route path="/adress" element={<Adress />} />
+              <Route path="/address" element={<Adress />} />
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/admin/new" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />

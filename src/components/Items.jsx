@@ -341,9 +341,9 @@ const Items = ({ user, isAdmin }) => {
                               if (!user) {
                                 toast.info('Please log in to proceed with your purchase.');
                                 navigate('/login', { state: { from: location } });
-                                return;
                               }
-                              navigate('/adress', { state: { item: { ...item, quantity: 1 } } }); 
+                              const itemToPurchase = { ...item, id: item.id, size: selectedSize, quantity: 1 };
+                              navigate('/address', { state: { item: itemToPurchase } });
                             }} 
                             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-lg text-sm font-bold transition-colors"
                           >
