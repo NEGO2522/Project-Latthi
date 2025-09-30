@@ -6,6 +6,8 @@ import { getAuth } from 'firebase/auth';
 import { FiShoppingCart, FiMenu, FiLoader, FiFilter, FiX } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
 import { handleImageError, convertImageUrl } from '../utils/imageUtils';
 import { ref, onValue } from 'firebase/database';
 import { database } from '../firebase/firebase';
@@ -19,6 +21,9 @@ const Items = ({ user, isAdmin }) => {
   const { getCartCount, addToCart } = useCart();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedSize, setSelectedSize] = useState('');
   const auth = getAuth();
 
   const [items, setItems] = useState([]);
@@ -104,6 +109,38 @@ const Items = ({ user, isAdmin }) => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const openSizeModal = (product) => {
+    setSelectedProduct(product);
+    setSelectedSize('');
+    setIsSizeModalOpen(true);
+  };
+
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      toast.error('Please select a size');
+      return;
+    }
+    
+    const user = auth.currentUser;
+    if (!user) {
+      toast.info('Please log in to add items to your cart.');
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+    
+    addToCart(selectedProduct, selectedSize, 1);
+    toast.success(`${selectedProduct.name} (Size: ${selectedSize}) added to cart!`, {
+      position: "top-center",
+      autoClose: 2000,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+    
+    setIsSizeModalOpen(false);
   };
 
   const filteredItems = useMemo(() =>
@@ -288,28 +325,13 @@ const Items = ({ user, isAdmin }) => {
                         </div>
                         <p className="text-sm text-gray-600 line-clamp-2 flex-grow mb-4">{item.description}</p>
                         <div className="mt-auto flex flex-col gap-2 pt-2 border-t border-gray-100">
-                           <button 
-                             onClick={(e) => { 
-                               e.stopPropagation();
-                               const user = auth.currentUser;
-                               if (!user) {
-                                 toast.info('Please log in to add items to your cart.');
-                                 navigate('/login', { state: { from: location } });
-                                 return;
-                               }
-                               addToCart(item, 'M', 1);
-                               toast.success(`${item.name} added to cart!`, {
-                                 position: "top-center",
-                                 autoClose: 2000,
-                                 hideProgressBar: true,
-                                 closeOnClick: true,
-                                 pauseOnHover: true,
-                                 draggable: true,
-                                 progress: undefined,
-                               });
-                             }} 
-                             className="w-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center transition-colors"
-                           >
+                             <button 
+                               onClick={(e) => { 
+                                 e.stopPropagation();
+                                 openSizeModal(item);
+                               }} 
+                               className="w-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center transition-colors"
+                             >
                              <FiShoppingCart className="mr-2" />Add to Cart
                            </button>
                            <button 
@@ -342,6 +364,81 @@ const Items = ({ user, isAdmin }) => {
           </main>
         </div>
       </div>
+
+      {/* Size Selection Modal */}
+      <Transition appear show={isSizeModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => setIsSizeModalOpen(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0 backdrop-blur-0"
+            enterTo="opacity-100 backdrop-blur-sm"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100 backdrop-blur-sm"
+            leaveTo="opacity-0 backdrop-blur-0"
+          >
+            <div className="fixed inset-0 bg-white/30 backdrop-blur-sm" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900 mb-4"
+                  >
+                    Select Size
+                  </Dialog.Title>
+                  
+                  <div className="grid grid-cols-4 gap-2 mb-6">
+                    {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => setSelectedSize(size)}
+                        className={`py-3 px-2 border rounded-md text-center font-medium transition-colors ${
+                          selectedSize === size
+                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                            : 'border-gray-300 hover:border-indigo-400 hover:bg-indigo-50'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
+                      onClick={() => setIsSizeModalOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
+                      onClick={handleAddToCart}
+                      disabled={!selectedSize}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 };

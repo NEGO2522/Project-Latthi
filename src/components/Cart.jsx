@@ -46,7 +46,7 @@ const Cart = () => {
             <FiShoppingBag className="w-full h-full" />
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Your cart is empty</h1>
-          <p className="text-gray-600 mb-8">Looks like you haven\'t added anything to your cart yet.</p>
+          <p className="text-gray-600 mb-8">Looks like you haven't added anything to your cart yet.</p>
           <Link 
             to="/items" 
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
@@ -94,7 +94,20 @@ const Cart = () => {
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
                             <h3 className="text-base sm:text-lg font-medium text-gray-900">{item.name}</h3>
-                            <p className="ml-4 font-medium text-gray-900 text-base sm:text-lg">{item.price}</p>
+                            <div className="text-right">
+                              <p className="font-medium text-gray-900 text-base sm:text-lg">
+                                ₹{(typeof item.price === 'string' 
+                                  ? parseFloat(item.price.replace(/[^0-9.]/g, '')) 
+                                  : item.price) * item.quantity}
+                              </p>
+                              {item.quantity > 1 && (
+                                <p className="text-sm text-gray-500">
+                                  {item.quantity} × ₹{typeof item.price === 'string' 
+                                    ? parseFloat(item.price.replace(/[^0-9.]/g, '')).toFixed(2) 
+                                    : item.price.toFixed(2)}
+                                </p>
+                              )}
+                            </div>
                           </div>
                           <p className="mt-1 text-sm text-gray-500">Size: {item.size}</p>
                         </div>
@@ -133,8 +146,8 @@ const Cart = () => {
 
             <div className="border-t border-gray-200 p-4 sm:p-6">
               <div className="flex justify-between text-base font-medium text-gray-900 mb-4">
-                <p>Subtotal</p>
-                <p>₹{getCartTotal().toLocaleString()}</p>
+                <p>Subtotal ({cartItems.reduce((total, item) => total + item.quantity, 0)} items)</p>
+                <p>₹{getCartTotal().toFixed(2)}</p>
               </div>
               <p className="text-sm text-gray-500 mb-6">
                 Shipping and taxes calculated at checkout.
