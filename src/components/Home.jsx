@@ -28,48 +28,75 @@ const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Generate a consistent discount percentage based on product ID
+  const getConsistentDiscount = (id, category) => {
+    if (!id) return 35; // Default discount if no ID
+    
+    // Create a simple hash from the product ID to get a consistent value
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      const char = id.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    // Use different discount ranges based on category
+    if (category === 'short-kurti') {
+      // For short kurtis, use 30-40% discount (consistent for each product)
+      return 30 + Math.abs(hash) % 11; // 30-40%
+    } else {
+      // For other categories, use 35-50% discount (consistent for each product)
+      return 35 + Math.abs(hash) % 16; // 35-50%
+    }
+  };
+
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true);
       try {
         const productsRef = ref(database, 'products');
         const snapshot = await get(productsRef);
-        if (snapshot.exists()) {
-          const allProducts = snapshot.val();
-          const productKeys = Object.keys(allProducts);
-          const recentProductKeys = productKeys.slice(-3);
-
-          const recentProductsWithDiscount = recentProductKeys.reduce((obj, key) => {
-            const product = allProducts[key];
-            const priceString = (product.price || '0').toString().replace('₹', '');
-            const discountedPrice = parseFloat(priceString);
-
-            let discountPercentage;
-            if (product.category === 'short-kurti') {
-              discountPercentage = Math.floor(30 + Math.random() * 11);
-            } else {
-              discountPercentage = Math.floor(35 + Math.random() * 16);
-            }
-
-            const originalPrice = Math.round(discountedPrice / (1 - (discountPercentage / 100)));
-
-            obj[key] = {
-              ...product,
-              id: key,
-              price: discountedPrice,
-              originalPrice: originalPrice,
-              discountPercentage: discountPercentage,
-            };
-            return obj;
-          }, {});
-
-          setProducts(recentProductsWithDiscount);
+        
+        if (!snapshot.exists()) {
+          setProducts([]);
+          return;
         }
+
+        const allProducts = snapshot.val();
+        const productKeys = Object.keys(allProducts);
+        const recentProductKeys = productKeys.slice(-3);
+
+        const recentProductsWithDiscount = recentProductKeys.reduce((obj, key) => {
+          const product = allProducts[key] || {};
+          const priceString = (product.price || '0').toString().replace('₹', '');
+          const discountedPrice = parseFloat(priceString) || 0;
+          
+          const discountPercentage = getConsistentDiscount(key, product.category || 'other');
+          const originalPrice = Math.round(discountedPrice / (1 - (discountPercentage / 100)));
+
+          obj[key] = {
+            ...product,
+            id: key,
+            name: product.name || 'Unnamed Product',
+            description: product.description || '',
+            price: discountedPrice,
+            originalPrice: originalPrice,
+            discountPercentage: discountPercentage,
+            images: Array.isArray(product.images) ? product.images : [product.image].filter(Boolean)
+          };
+          return obj;
+        }, {});
+
+        setProducts(recentProductsWithDiscount);
       } catch (error) {
         console.error('Error fetching products:', error);
         toast.error('Failed to load products.');
+        setProducts([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
+
     fetchProducts();
   }, []);
 

@@ -52,17 +52,27 @@ const Items = ({ user, isAdmin }) => {
             const priceString = (product.price || '0').toString().replace('₹', '');
             const discountedPrice = parseFloat(priceString);
             
-            // Define realistic discount percentages based on category
-            let discountPercentage;
-            if (product.category === 'short-kurti') {
-              // For short kurtis, use 30-40% discount
-              discountPercentage = Math.floor(30 + Math.random() * 11); // Random between 30-40%
-            } else {
-              // For other categories, use 35-50% discount
-              discountPercentage = Math.floor(35 + Math.random() * 16); // Random between 35-50%
-            }
+            // Generate a consistent discount percentage based on product ID
+            const getConsistentDiscount = (id, category) => {
+              // Create a simple hash from the product ID to get a consistent value
+              let hash = 0;
+              for (let i = 0; i < id.length; i++) {
+                const char = id.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+              }
+              
+              // Use different discount ranges based on category
+              if (category === 'short-kurti') {
+                // For short kurtis, use 30-40% discount (consistent for each product)
+                return 30 + Math.abs(hash) % 11; // 30-40%
+              } else {
+                // For other categories, use 35-50% discount (consistent for each product)
+                return 35 + Math.abs(hash) % 16; // 35-50%
+              }
+            };
             
-            // Calculate original price based on discounted price and percentage
+            const discountPercentage = getConsistentDiscount(id, product.category);
             const originalPrice = Math.round(discountedPrice / (1 - (discountPercentage / 100)));
 
             return {

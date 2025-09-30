@@ -28,39 +28,64 @@ const Details = () => {
   const { addToCart } = useCart();
   const auth = getAuth();
 
+  // Generate a consistent discount percentage based on product ID
+  const getConsistentDiscount = (id, category) => {
+    if (!id) return 35; // Default discount if no ID
+    
+    // Create a simple hash from the product ID to get a consistent value
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      const char = id.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    // Use different discount ranges based on category
+    if (category === 'short-kurti') {
+      // For short kurtis, use 30-40% discount (consistent for each product)
+      return 30 + Math.abs(hash) % 11; // 30-40%
+    } else {
+      // For other categories, use 35-50% discount (consistent for each product)
+      return 35 + Math.abs(hash) % 16; // 35-50%
+    }
+  };
+
   useEffect(() => {
     const fetchProduct = async () => {
+      if (!id) {
+        toast.error('Product ID is missing');
+        navigate('/');
+        return;
+      }
+
       setLoading(true);
       try {
         const snapshot = await get(ref(database, `products/${id}`));
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const priceString = (data.price || '0').toString().replace('₹', '');
-          const discountedPrice = parseFloat(priceString);
-          
-          let discountPercentage;
-          if (data.category === 'short-kurti') {
-            discountPercentage = Math.floor(30 + Math.random() * 11);
-          } else {
-            discountPercentage = Math.floor(35 + Math.random() * 16);
-          }
-          
-          const originalPrice = Math.round(discountedPrice / (1 - (discountPercentage / 100)));
-
-          const productWithDiscount = {
-            ...data,
-            price: discountedPrice,
-            originalPrice: originalPrice,
-            discountPercentage: discountPercentage,
-          };
-
-          setProduct(productWithDiscount);
-          setSelectedSize(data.sizes?.[0] || '');
-          setSelectedColor(data.colors?.[0] || '');
-        } else {
+        if (!snapshot.exists()) {
           toast.error('Product not found!');
           navigate('/');
+          return;
         }
+
+        const data = snapshot.val();
+        const priceString = (data.price || '0').toString().replace('₹', '');
+        const discountedPrice = parseFloat(priceString) || 0;
+        
+        const discountPercentage = getConsistentDiscount(id, data.category || 'other');
+        const originalPrice = Math.round(discountedPrice / (1 - (discountPercentage / 100)));
+
+        const productWithDiscount = {
+          ...data,
+          id: id,
+          price: discountedPrice,
+          originalPrice: originalPrice,
+          discountPercentage: discountPercentage,
+          images: Array.isArray(data.images) ? data.images : [data.image].filter(Boolean)
+        };
+
+        setProduct(productWithDiscount);
+        setSelectedSize(Array.isArray(data.sizes) ? data.sizes[0] : '');
+        setSelectedColor(Array.isArray(data.colors) ? data.colors[0] : '');
       } catch (error) {
         console.error('Error fetching product:', error);
         toast.error('Failed to load product details.');
