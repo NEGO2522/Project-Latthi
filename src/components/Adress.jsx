@@ -1,17 +1,29 @@
-import { useState, useMemo, useEffect, useContext } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import emailjs from '@emailjs/browser';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FiMapPin, FiCreditCard, FiCheckCircle, FiHome, FiMail, FiPhone, FiLoader, FiShoppingCart } from 'react-icons/fi';
+import { 
+  FiMapPin, 
+  FiCreditCard, 
+  FiCheckCircle, 
+  FiHome, 
+  FiMail, 
+  FiPhone, 
+  FiLoader, 
+  FiShoppingCart,
+  FiArrowLeft
+} from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { handleImageError } from '../utils/imageUtils';
 import { auth, database, ref, push, set } from '../firebase/firebase';
-import { CartContext } from '../hooks/useCart';
 
 const Adress = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const [item, setItem] = useState(state?.item || null);
-  const [isLoading, setIsLoading] = useState(!state?.item);
+  const [items, setItems] = useState(state?.items || (state?.item ? [state.item] : null));
+  const [isLoading, setIsLoading] = useState(!state?.item && !state?.items);
+  const isCartCheckout = state?.fromCart || false;
+  
+  // Initialize form state with all required fields
   const [form, setForm] = useState({
     fullName: '',
     phone: '',
@@ -28,14 +40,14 @@ const Adress = () => {
   const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
-    if (state?.item) {
-      setItem(state.item);
+    if (state?.items || state?.item) {
+      setItems(state.items || [state.item]);
       setIsLoading(false);
-    } else if (!item) {
-      toast.error('No product selected. Please select a product first.');
-      navigate('/items');
+    } else if (!items && !isLoading) {
+      // Only show error and navigate if we're not in the initial loading state
+      toast.error('No products selected. Please add items to your cart first.');
     }
-  }, [state, navigate, item]);
+  }, [state, navigate, items, isLoading, isCartCheckout]);
 
   const indianStates = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -45,27 +57,49 @@ const Adress = () => {
     'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
     'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
     'Andaman and Nicobar Islands', 'Chandigarh',
-    'Dadra and Nagar Haveli and Daman and Diu', 'Delhi',
-    'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
+    'Dadra and Nagar Haveli and Daman and Diu',
+    'Delhi', 'Jammu and Kashmir', 'Ladakh',
+    'Lakshadweep', 'Puducherry'
   ];
 
-  const priceNumber = useMemo(() => {
+  const { subtotal, total, item } = useMemo(() => {
+    if (!items || items.length === 0) {
+      return {
+        subtotal: 0,
+        shipping: 0,
+        tax: 0,
+        total: 0,
+        item: null
+      };
+    }
+    
+    const subtotalValue = items.reduce((total, currentItem) => {
+      try {
+        const price = typeof currentItem.price === 'string' 
+          ? parseFloat(currentItem.price.replace(/[^0-9.]/g, '') || '0')
+          : (currentItem.price || 0);
+        return total + (price * (currentItem.quantity || 1));
+      } catch (error) {
+        console.error('Error calculating price:', error);
+        return total;
+      }
+    }, 0);
+    
+    return {
+      subtotal: subtotalValue,
+      shipping: 0,
+      tax: 0,
+      total: subtotalValue,
+      item: items[0] // For single item view
+    };
+  }, [items]);
+
+  const itemPrice = useMemo(() => {
     if (!item?.price) return 0;
     const priceStr = String(item.price).replace(/[^0-9]/g, '');
     const num = parseInt(priceStr, 10);
     return isNaN(num) ? 0 : num;
   }, [item?.price]);
-
-  const total = useMemo(() => {
-    const qty = item?.quantity ? Number(item.quantity) : 1;
-    const subtotal = priceNumber * qty;
-    return {
-      subtotal,
-      shipping: 0,
-      tax: 0,
-      total: subtotal
-    };
-  }, [priceNumber, item?.quantity]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -238,18 +272,25 @@ const Adress = () => {
     await processRazorpayPayment();
   };
 
-    if (isLoading) {
-        return <div className="min-h-screen flex justify-center items-center"><FiLoader className="animate-spin text-4xl" /></div>;
-    }
+  if (isLoading || !items || items.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <FiLoader className="animate-spin text-2xl text-indigo-600" />
+      </div>
+    );
+  }
 
-    if (!item) {
-        return (
-            <div className="min-h-screen flex flex-col justify-center items-center p-4">
-                <p>No product selected.</p>
-                <button onClick={() => navigate('/items')} className="text-indigo-600">Back to Products</button>
-            </div>
-        );
-    }
+  const currentItem = items[0]; // Get the first item for display
+  
+  // Calculate price for display
+  const getDisplayPrice = (price) => {
+    if (!price) return 0;
+    const priceStr = String(price).replace(/[^0-9]/g, '');
+    const num = parseInt(priceStr, 10);
+    return isNaN(num) ? 0 : num;
+  };
+  
+  const displayPrice = getDisplayPrice(currentItem?.price);
 
   return (
     <div className="min-h-screen bg-white pt-2">
@@ -368,16 +409,21 @@ const Adress = () => {
           >
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
             <div className="flex items-center space-x-4">
-              <img src={item.image || item.images?.[0]} alt={item.name} className="w-20 h-20 rounded-lg object-cover border" onError={handleImageError} />
+              <img 
+                src={currentItem.image || currentItem.images?.[0]} 
+                alt={currentItem.name} 
+                className="w-20 h-20 rounded-lg object-cover border" 
+                onError={handleImageError} 
+              />
               <div>
-                <p className="font-medium text-gray-900 line-clamp-2">{item.name}</p>
-                <p className="text-sm text-gray-600">Size: {item.size} • Qty: {item.quantity}</p>
+                <p className="font-medium text-gray-900 line-clamp-2">{currentItem.name}</p>
+                <p className="text-sm text-gray-600">Size: {currentItem.size} • Qty: {currentItem.quantity || 1}</p>
               </div>
             </div>
 
             <div className="mt-5 space-y-2 text-sm text-gray-700">
-              <div className="flex justify-between"><span>Item Price</span><span>₹{priceNumber}</span></div>
-              <div className="flex justify-between"><span>Quantity</span><span>{item.quantity}</span></div>
+              <div className="flex justify-between"><span>Item Price</span><span>₹{itemPrice}</span></div>
+              <div className="flex justify-between"><span>Quantity</span><span>{item?.quantity || 1}</span></div>
               <div className="flex justify-between"><span>Delivery</span><span className="text-green-600">Free</span></div>
               <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t"><span>Total</span><span>₹{total.total}</span></div>
             </div>

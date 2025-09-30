@@ -80,10 +80,12 @@ export default function CartProvider({ children }) {
   const getCartTotal = () => {
     return cartItems.reduce(
       (total, item) => {
+        // If price is a string, remove non-numeric characters and convert to number
+        // If it's already a number, use it directly
         const price = typeof item.price === 'string' 
-          ? parseInt(item.price.replace(/[^0-9]/g, '') || '0', 10) 
-          : Number(item.price) || 0;
-        return total + (price * (item.quantity || 1));
+          ? parseFloat(item.price.replace(/[^0-9.]/g, '')) 
+          : item.price;
+        return total + (price * item.quantity);
       },
       0
     );
