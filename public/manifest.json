@@ -9,21 +9,21 @@
   "description": "Lathi is a fashion brand that offers a unique collection of kurtis for the modern woman.",
   "icons": [
     {
-      "src": "/vite.svg",
-      "type": "image/svg+xml",
-      "sizes": "48x48 72x72 96x96 128x128 256x256",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/vite.svg",
-      "type": "image/svg+xml",
+      "src": "/assets/Logo.png",
+      "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "/vite.svg",
-      "type": "image/svg+xml",
+      "src": "/assets/Logo.png",
+      "type": "image/png",
       "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/Logo.png",
+      "type": "image/png",
+      "sizes": "144x144",
       "purpose": "any maskable"
     }
   ],
