@@ -37,9 +37,25 @@ const Items = ({ user, isAdmin }) => {
 
   const [selectedCategory, setSelectedCategory] = useState(getCategoryFromURL());
 
+  // Update URL when category changes
+  const handleCategoryChange = (category) => {
+    const params = new URLSearchParams(location.search);
+    if (category === 'All') {
+      params.delete('category');
+    } else {
+      params.set('category', category);
+    }
+    navigate({ search: params.toString() }, { replace: true });
+    setSelectedCategory(category);
+  };
+
+  // Sync selectedCategory with URL
   useEffect(() => {
-    setSelectedCategory(getCategoryFromURL());
-  }, [location.search, getCategoryFromURL]);
+    const category = getCategoryFromURL();
+    if (category !== selectedCategory) {
+      setSelectedCategory(category);
+    }
+  }, [location.search, getCategoryFromURL, selectedCategory]);
 
 
   useEffect(() => {
@@ -170,7 +186,7 @@ const Items = ({ user, isAdmin }) => {
           <button 
             key={category.value}
             onClick={() => {
-              setSelectedCategory(category.value);
+              handleCategoryChange(category.value);
               if (isMobileView) {
                 toggleMenu();
               }
@@ -314,7 +330,11 @@ const Items = ({ user, isAdmin }) => {
                   {filteredItems.map((item) => (
                     <div
                       key={item.id}
-                      onClick={() => navigate(`/details/${item.id}`)}
+                      onClick={() => {
+                        const params = new URLSearchParams(location.search);
+                        const categoryParam = selectedCategory !== 'All' ? `?category=${encodeURIComponent(selectedCategory)}` : '';
+                        navigate(`/details/${item.id}${categoryParam}`);
+                      }}
                       className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col cursor-pointer"
                     >
                       <div className="h-56 w-full overflow-hidden">

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { FiShoppingCart, FiCheck, FiMinus, FiPlus } from 'react-icons/fi';
+import { useNavigate, useParams, useLocation, Link } from 'react-router-dom';
+import { FiShoppingCart, FiCheck, FiMinus, FiPlus, FiArrowLeft } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { handleImageError, convertGoogleDriveLink } from '../utils/imageUtils';
 import { toast } from 'react-toastify';
 import Confetti from 'react-confetti';
 import { getAuth } from 'firebase/auth';
-import { ref, update, get, set } from 'firebase/database';
+import { ref, get, set } from 'firebase/database';
 import { database } from '../firebase/firebase';
 import { referralCodes } from './ReferralCode';
 
@@ -27,6 +27,9 @@ const Details = () => {
   const location = useLocation();
   const { addToCart } = useCart();
   const auth = getAuth();
+  const searchParams = new URLSearchParams(location.search);
+  const categoryParam = searchParams.get('category');
+  const backUrl = categoryParam ? `/items?category=${encodeURIComponent(categoryParam)}` : '/items';
 
   // Generate a consistent discount percentage based on product ID
   const getConsistentDiscount = (id, category) => {
@@ -159,8 +162,23 @@ const Details = () => {
     navigate('/address', { state: { item: itemToPurchase } });
   };
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  if (!product) return <div className="flex items-center justify-center min-h-screen">Product not found.</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+    </div>
+  );
+  
+  if (!product) return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h2 className="text-2xl font-semibold text-gray-800 mb-4">Product not found</h2>
+      <Link 
+        to={backUrl} 
+        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+      >
+        Back to Shop
+      </Link>
+    </div>
+  );
 
   const finalPrice = referralApplied ? product.price * 0.9 : product.price;
 
@@ -168,6 +186,15 @@ const Details = () => {
     <div className="min-h-screen bg-gray-50 py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
       {showConfetti && <Confetti />}
       <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <button 
+            onClick={() => navigate(backUrl)}
+            className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            <FiArrowLeft className="mr-2" />
+            Back to {categoryParam || 'Shop'}
+          </button>
+        </div>
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 p-4 sm:p-6">
             <div className="space-y-4">
