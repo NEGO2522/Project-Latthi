@@ -79,7 +79,12 @@ export default function CartProvider({ children }) {
 
   const getCartTotal = () => {
     return cartItems.reduce(
-      (total, item) => total + (parseInt(item.price.replace(/[^0-9]/g, '')) * item.quantity),
+      (total, item) => {
+        const price = typeof item.price === 'string' 
+          ? parseInt(item.price.replace(/[^0-9]/g, '') || '0', 10) 
+          : Number(item.price) || 0;
+        return total + (price * (item.quantity || 1));
+      },
       0
     );
   };
