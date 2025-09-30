@@ -228,9 +228,6 @@ const Cart = () => {
                   <p>₹{getDiscountedTotal().toFixed(2)}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 mt-4">
-                Shipping and taxes calculated at checkout.
-              </p>
               {showConfetti && <Confetti recycle={false} numberOfPieces={200} />}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Link 
