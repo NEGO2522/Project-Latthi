@@ -202,53 +202,58 @@ const Items = ({ user, isAdmin }) => {
         )}
       </AnimatePresence>
 
-      <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 pt-4 pb-1 sm:pt-6 sm:pb-2">
-        <header className="relative flex items-center justify-between mb-4 sm:mb-6 md:hidden">
-          {/* Mobile Menu Button */}
-          <div className="flex-1 flex justify-start">
-            <button 
-              onClick={toggleMenu} 
-              className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
-              aria-label="Open menu"
-            >
-              <FiMenu size={24} />
-            </button>
-          </div>
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 pt-16 pb-1 sm:pt-6 sm:pb-2">
+        {/* Fixed Header for Mobile */}
+        <header className="fixed top-0 left-0 right-0 z-30 bg-white shadow-sm md:hidden">
+          <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 py-2">
+            <div className="relative flex items-center justify-between">
+              {/* Mobile Menu Button */}
+              <div className="flex-1 flex justify-start">
+                <button 
+                  onClick={toggleMenu} 
+                  className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
+                  aria-label="Open menu"
+                >
+                  <FiMenu size={24} />
+                </button>
+              </div>
 
-          {/* Logo - Centered */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="flex items-center space-x-2">
-              <Link to="/" className="flex items-center">
-                <img 
-                  src={`${window.location.protocol}//${window.location.host}/assets/Logo.png`}
-                  alt="Lathi Logo" 
-                  className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = '/assets/placeholder.jpg';
-                  }}
-                />
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 tracking-wide ml-2" style={{ fontFamily: "'Great Vibes', cursive" }}>
-                  LATHI
-                </h1>
-              </Link>
+              {/* Logo - Centered */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="flex items-center space-x-2">
+                  <Link to="/" className="flex items-center">
+                    <img 
+                      src={`${window.location.protocol}//${window.location.host}/assets/Logo.png`}
+                      alt="Lathi Logo" 
+                      className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/assets/placeholder.jpg';
+                      }}
+                    />
+                    <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 tracking-wide ml-2" style={{ fontFamily: "'Great Vibes', cursive" }}>
+                      LATHI
+                    </h1>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Cart Icon */}
+              <div className="flex-1 flex justify-end">
+                <Link to="/cart" className="p-2 text-gray-600 hover:text-gray-900 relative">
+                  <FiShoppingCart size={24} />
+                  {getCartCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                      {getCartCount()}
+                    </span>
+                  )}
+                </Link>
+              </div>
             </div>
-          </div>
-
-          {/* Cart Icon */}
-          <div className="flex-1 flex justify-end">
-            <Link to="/cart" className="p-2 text-gray-600 hover:text-gray-900 relative">
-              <FiShoppingCart size={24} />
-              {getCartCount() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                  {getCartCount()}
-                </span>
-              )}
-            </Link>
           </div>
         </header>
 
-        <div className="md:flex md:gap-8 lg:gap-12 mt-6 md:mt-8">
+        <div className="md:flex md:gap-8 lg:gap-12 mt-4 md:mt-8">
           <aside className="hidden md:block w-64 flex-shrink-0">
             <CategorySidebar />
           </aside>
