@@ -26,7 +26,7 @@ const Cart = () => {
     }
 
     if (cartItems.length > 0) {
-      navigate('/address', { state: { item: cartItems, fromCart: true } });
+      navigate('/adress', { state: { item: cartItems, fromCart: true } });
     } else {
       toast.error('Your cart is empty.');
     }
