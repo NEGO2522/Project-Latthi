@@ -4,11 +4,11 @@ import { FiShoppingCart, FiCheck, FiMinus, FiPlus, FiArrowLeft } from 'react-ico
 import { useCart } from '../hooks/useCart';
 import { handleImageError, convertGoogleDriveLink } from '../utils/imageUtils';
 import { toast } from 'react-toastify';
-import Confetti from 'react-confetti';
 import { getAuth } from 'firebase/auth';
 import { ref, get, set } from 'firebase/database';
 import { database } from '../firebase/firebase';
 import { referralCodes } from './ReferralCode';
+import SizeChart from './SizeChart';
 
 const Details = () => {
   const [product, setProduct] = useState(null);
@@ -21,6 +21,7 @@ const Details = () => {
   const [referralCode, setReferralCode] = useState('');
   const [referralApplied, setReferralApplied] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showSizeChart, setShowSizeChart] = useState(false);
 
   const navigate = useNavigate();
   const { id } = useParams();
@@ -221,10 +222,28 @@ const Details = () => {
                 <p className="text-gray-600 text-sm sm:text-base">{product.description}</p>
                 
                 <div>
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">Select Size</h3>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-sm font-medium text-gray-900">Select Size</h3>
+                        <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowSizeChart(true);
+                            }}
+                            className="text-xs text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none"
+                        >
+                            Check Size Chart
+                        </button>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
                         {product.sizes.map(size => (
-                            <button key={size} onClick={() => setSelectedSize(size)} className={`px-4 py-2 text-sm border rounded-md ${selectedSize === size ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}>
+                            <button 
+                                key={size} 
+                                onClick={() => setSelectedSize(size)} 
+                                className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-200 ${selectedSize === size 
+                                    ? 'bg-indigo-600 text-white border-2 border-indigo-600 transform scale-110' 
+                                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-indigo-400 hover:shadow-md'}`}
+                                title={`Size ${size}`}
+                            >
                                 {size}
                             </button>
                         ))}
@@ -297,6 +316,11 @@ const Details = () => {
           </div>
         </div>
       </div>
+      
+      {/* Size Chart Modal */}
+      {showSizeChart && (
+        <SizeChart onClose={() => setShowSizeChart(false)} />
+      )}
     </div>
   );
 };

@@ -139,12 +139,16 @@ const Items = ({ user, isAdmin }) => {
 
   const openSizeModal = (product) => {
     setSelectedProduct(product);
-    setSelectedSize('');
+    // Set the first available size as default if sizes exist, otherwise empty string
+    const availableSizes = Array.isArray(product.sizes) && product.sizes.length > 0 
+      ? product.sizes 
+      : [];
+    setSelectedSize(availableSizes.length > 0 ? availableSizes[0] : '');
     setIsSizeModalOpen(true);
   };
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    if (!selectedSize && selectedProduct?.sizes?.length > 0) {
       toast.error('Please select a size');
       return;
     }
@@ -430,20 +434,26 @@ const Items = ({ user, isAdmin }) => {
                   </Dialog.Title>
                   
                   <div className="grid grid-cols-4 gap-2 mb-6">
-                    {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => setSelectedSize(size)}
-                        className={`py-3 px-2 border rounded-md text-center font-medium transition-colors ${
-                          selectedSize === size
-                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                            : 'border-gray-300 hover:border-indigo-400 hover:bg-indigo-50'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {Array.isArray(selectedProduct?.sizes) && selectedProduct.sizes.length > 0 ? (
+                      selectedProduct.sizes.map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => setSelectedSize(size)}
+                          className={`py-3 px-2 border rounded-md text-center font-medium transition-colors ${
+                            selectedSize === size
+                              ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                              : 'border-gray-300 hover:border-indigo-400 hover:bg-indigo-50'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="col-span-4 py-3 text-center text-gray-500">
+                        No sizes available for this product
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-4 flex justify-end space-x-3">
