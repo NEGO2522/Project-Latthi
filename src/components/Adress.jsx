@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useContext } from 'react';
 import emailjs from '@emailjs/browser';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FiMapPin, FiCreditCard, FiCheckCircle, FiHome, FiMail, FiPhone, FiLoader } from 'react-icons/fi';
+import { FiMapPin, FiCreditCard, FiCheckCircle, FiHome, FiMail, FiPhone, FiLoader, FiShoppingCart } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { handleImageError } from '../utils/imageUtils';
 import { auth, database, ref, push, set } from '../firebase/firebase';
+import { CartContext } from '../contexts/CartContext';
 
 const Adress = () => {
   const navigate = useNavigate();
@@ -134,7 +135,7 @@ const Adress = () => {
       amount: amountInPaise.toString(),
       currency: 'INR',
       name: 'Lathi',
-      description: `Order for ${item.name}`,
+      description: `Order for ${items.length} item${items.length > 1 ? 's' : ''}`,
       image: '/assets/Logo.png',
       handler: async function (response) {
         try {
