@@ -153,12 +153,20 @@ const Adress = () => {
       return;
     }
 
-    const amountInPaise = Math.round(total.total * 100);
+    // Calculate the total amount from items
+    const orderTotal = items.reduce((sum, item) => {
+      const price = typeof item.price === 'string' 
+        ? parseFloat(item.price.replace(/[^0-9.]/g, '') || '0')
+        : (item.price || 0);
+      return sum + (price * (item.quantity || 1));
+    }, 0);
+
+    const amountInPaise = Math.round(orderTotal * 100);
     const clientOrderId = `order_${Date.now()}`;
 
     const orderData = {
         item,
-        total: total.total,
+        total: orderTotal,
         address: form,
         paymentMethod: 'Online Payment',
         orderId: clientOrderId,
@@ -166,7 +174,7 @@ const Adress = () => {
 
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: amountInPaise.toString(),
+      amount: Math.max(amountInPaise, 100), // Ensure minimum amount is 1 INR (100 paise) for testing
       currency: 'INR',
       name: 'Lathi',
       description: `Order for ${items.length} item${items.length > 1 ? 's' : ''}`,
@@ -407,25 +415,58 @@ const Adress = () => {
             transition={{ delay: 0.15 }}
             className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-fit lg:sticky lg:top-6"
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
-            <div className="flex items-center space-x-4">
-              <img 
-                src={currentItem.image || currentItem.images?.[0]} 
-                alt={currentItem.name} 
-                className="w-20 h-20 rounded-lg object-cover border" 
-                onError={handleImageError} 
-              />
-              <div>
-                <p className="font-medium text-gray-900 line-clamp-2">{currentItem.name}</p>
-                <p className="text-sm text-gray-600">Size: {currentItem.size} • Qty: {currentItem.quantity || 1}</p>
-              </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary ({items?.length || 0} {items?.length === 1 ? 'Item' : 'Items'})</h3>
+            
+            {/* List of all items */}
+            <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+              {items?.map((item, index) => {
+                const price = typeof item.price === 'string' 
+                  ? parseFloat(item.price.replace(/[^0-9.]/g, '') || '0')
+                  : (item.price || 0);
+                const quantity = item.quantity || 1;
+                
+                return (
+                  <div key={index} className="flex items-start space-x-4 border-b pb-3">
+                    <img 
+                      src={item.image || item.images?.[0]} 
+                      alt={item.name} 
+                      className="w-16 h-16 rounded-lg object-cover border" 
+                      onError={handleImageError} 
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 line-clamp-2">{item.name}</p>
+                      <p className="text-sm text-gray-600">Size: {item.size || 'One Size'} • Qty: {quantity}</p>
+                      <p className="text-sm font-medium mt-1">₹{price.toFixed(2)} × {quantity} = ₹{(price * quantity).toFixed(2)}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="mt-5 space-y-2 text-sm text-gray-700">
-              <div className="flex justify-between"><span>Item Price</span><span>₹{itemPrice}</span></div>
-              <div className="flex justify-between"><span>Quantity</span><span>{item?.quantity || 1}</span></div>
-              <div className="flex justify-between"><span>Delivery</span><span className="text-green-600">Free</span></div>
-              <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t"><span>Total</span><span>₹{total.total}</span></div>
+            {/* Order Total */}
+            <div className="mt-5 space-y-2 text-sm text-gray-700 border-t pt-4">
+              <div className="flex justify-between">
+                <span>Subtotal ({items?.reduce((sum, item) => sum + (item.quantity || 1), 0)} items)</span>
+                <span>₹{items?.reduce((sum, item) => {
+                  const price = typeof item.price === 'string' 
+                    ? parseFloat(item.price.replace(/[^0-9.]/g, '') || '0')
+                    : (item.price || 0);
+                  return sum + (price * (item.quantity || 1));
+                }, 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Delivery</span>
+                <span className="text-green-600">Free</span>
+              </div>
+              <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t mt-2">
+                <span>Total Amount</span>
+                <span>₹{items?.reduce((sum, item) => {
+                  const price = typeof item.price === 'string' 
+                    ? parseFloat(item.price.replace(/[^0-9.]/g, '') || '0')
+                    : (item.price || 0);
+                  return sum + (price * (item.quantity || 1));
+                }, 0).toFixed(2)}</span>
+              </div>
             </div>
             <div className="mt-5 flex items-center text-xs text-gray-500"><FiCheckCircle className="mr-2" /> Secure checkout powered by Lathi</div>
           </div>
